@@ -1,0 +1,1822 @@
+/* ─────────────────────────────────────────────────────────────
+   Terminal Value — il linguaggio visivo dei numeri.
+
+   In Achivia i dati sono ovunque: XP, livelli, crediti, percentuali,
+   conti alla rovescia, medaglie prese. Prima ognuno aveva la sua forma —
+   pillole chiare, barre arrotondate, griglie bianche — e la stessa cifra
+   cambiava faccia da una schermata all'altra.
+
+   Qui i valori hanno un posto solo: un terminale. Fondo quasi nero,
+   fosforo azzurro al neon, carattere a larghezza fissa, cornice di un
+   pixel, righe divisorie e un velo di scanline. Non e' una mano di colore
+   data alle schede di prima: e' una superficie diversa dal resto dell'app,
+   che si riconosce a colpo d'occhio come "qui ci sono i dati".
+
+   Il resto dell'app — navigazione, moduli, dialoghi, testi — non si
+   tocca: un terminale che invade anche i campi da compilare smette di
+   voler dire qualcosa.
+
+   La tinta del fosforo si cambia da qui: sono i cinque token del blocco
+   "Fosforo" piu' le cornici e gli aloni subito sotto.
+
+   Tutto passa dai token qui sotto: cambiare la tinta del fosforo o lo
+   spessore della cornice si fa in un punto solo.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* ─── Superfici ───
+     L'azzurro c'e' anche nel nero: un fondo neutro sotto il fosforo si
+     legge come "schermo spento", questo come "schermo acceso al minimo".
+
+     Le finestre non sono pero' nere piene: lasciano passare un quinto
+     dello sfondo. Dietro c'e' un castello che cambia luce da un'ora
+     all'altra, e un pannello opaco lo copre e basta — un filo di vetro e
+     la finestra ci sta dentro invece che sopra. Un quinto e non di piu':
+     oltre, il fosforo comincia a perdere contrasto sul cielo di
+     mezzogiorno, che e' il fondo peggiore che ci sia.
+
+     `--tv-bg` resta pieno: serve dove il colore fa da inchiostro e non da
+     superficie — le righe della griglia disegnate sopra le barre. */
+  --tv-bg:        #050a10;
+  --tv-vetro:     rgba(5, 10, 16, 0.78);    /* le finestre */
+  --tv-surface:   rgba(7, 18, 27, 0.82);    /* la riga in evidenza dentro una finestra */
+  --tv-surface-2: #0a1a26;
+  --tv-track:     #0c1e2b;   /* fondo delle barre: un incavo, non una finestra */
+
+  /* ─── Fosforo ───
+     Tre livelli di luce, che sono anche la gerarchia: il valore e' la
+     cosa piu' luminosa, l'etichetta la piu' spenta. Misurati sul fondo
+     #050a10: 17,3:1 il valore, 12,0:1 il primario, 6,1:1 l'etichetta —
+     tutti sopra la soglia AA, anche il testo piu' piccolo. */
+  --tv-bright:    #d6f4ff;   /* il numero che conta */
+  --tv-primary:   #4ad9ff;   /* valori, cifre, barre */
+  --tv-secondary: #29b6e8;   /* accenti, cornici accese */
+  /* L'etichetta e' schiarita da quando le finestre sono di vetro: sul
+     nero pieno teneva 6,1:1, ma sul cielo che passa attraverso arrivava a
+     4,05 — sotto la soglia. Cosi' tiene 4,9:1 nel caso peggiore (una
+     finestra sopra il punto piu' chiaro del mezzogiorno) e 7,3:1 di
+     notte, e resta comunque piu' spenta del primario, che e' quello che
+     deve dire. */
+  --tv-dim:       #78a3b9;   /* etichette e testo di servizio */
+  --tv-ghost:     #2f4a58;   /* righe, puntini, decorazioni: non si legge, si vede */
+
+  /* ─── Cornici e luce ─── */
+  --tv-border:       rgba(74, 217, 255, 0.26);
+  --tv-border-forte: rgba(74, 217, 255, 0.55);
+  --tv-glow:         rgba(74, 217, 255, 0.30);
+  --tv-glow-forte:   rgba(74, 217, 255, 0.55);
+
+  /* ─── Stati ───
+     Il rosso e' quello che l'app usa gia' per l'allarme: il conto alla
+     rovescia scaduto deve restare quel rosso li', non diventare un
+     azzurro con un'etichetta diversa. */
+  --tv-error:   var(--ui-alert-testo);
+  --tv-warn:    #ffb347;
+  --tv-success: var(--tv-primary);
+
+  /* ─── Carattere ───
+     Un mono da terminale, con la coda di quelli di sistema: se il font
+     dalla rete non arriva, la griglia delle cifre regge lo stesso. */
+  --tv-font: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+             'DejaVu Sans Mono', 'Courier New', monospace;
+
+  /* ─── Misure ───
+     Angoli vivi: un raggio di 2px basta a togliere la sensazione di
+     spigolo tagliente senza far somigliare il pannello a una card. */
+  --tv-radius: 2px;
+  --tv-bordo:  1px;
+  --tv-pad:    14px;
+  --tv-gap:    10px;
+
+  /* ─── CRT ───
+     Il passo delle scanline e la loro forza. Sono l'unico effetto che
+     tocca la leggibilita', quindi stanno qui dove si spengono in fretta. */
+  --tv-scan-passo: 3px;
+  --tv-scan-forza: 0.055;
+  --tv-cella: 7px;           /* larghezza di un blocco della barra */
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Il pannello
+   ───────────────────────────────────────────────────────────── */
+
+.tv-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--tv-vetro);
+  border: var(--tv-bordo) solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  padding: var(--tv-pad);
+  font-family: var(--tv-font);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--tv-primary);
+  /* Un alone verso l'interno: il vetro di un tubo catodico non e' mai
+     illuminato fino al bordo. */
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+/* Le scanline, la vignettatura e la sfumatura del fosforo stanno tutte in
+   un livello solo, sopra il contenuto ma trasparente ai clic. */
+.tv-panel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      rgba(0, 0, 0, var(--tv-scan-forza)) 0 1px,
+      transparent 1px var(--tv-scan-passo)
+    ),
+    radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.45) 100%);
+  animation: tv-respiro 7s steps(12, end) infinite;
+}
+
+/* Il "flicker": una variazione di luce cosi' piccola che si nota solo se la
+   si cerca. Serve a far sembrare acceso il pannello, non a farlo lampeggiare. */
+@keyframes tv-respiro {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.94; }
+}
+
+/* Il contenuto sta sopra la vignettatura e sotto le scanline. */
+.tv-panel > * { position: relative; z-index: 1; }
+
+/* ─────────────────────────────────────────────────────────────
+   Gli angoli
+
+   Piccole tacche agli angoli: e' quello che resta della cornice ASCII
+   ┌ ┐ └ ┘ quando la si disegna con un bordo invece che con i caratteri.
+
+   Erano solo del pannello dati. Stanno bene su tutto quello che ha gli
+   angoli vivi — le superfici e i comandi — perche' sono il segno che dice
+   "questo pezzo di schermo e' un terminale", e ripeterlo e' quello che
+   tiene insieme schermate scritte in momenti diversi.
+
+   Chi resta fuori, e perche':
+   · le finestre col raggio grande — la pillola del titolo e il pannello
+     della descrizione in cima alle pagine — perche' li' l'angolo non c'e',
+     e una tacca a squadra su una curva sembra un errore di stampa;
+   · le pillole e i cerchi (livello, crediti, volume, il "?" della guida):
+     stessa ragione;
+   · le etichette che non si premono — `.tv-chip`, `.ui-stat`, il timer —
+     perche' sono valori, non superfici: incorniciarle vorrebbe dire dare
+     a un numero l'aria di una finestra;
+   · i campi di testo, che sono un'altra cosa ancora: si scrive dentro, e
+     quattro squadre intorno a un cursore sono decorazione.
+
+   La misura sta in tre variabili. Un pannello largo e un pulsante alto
+   quaranta pixel portano lo stesso segno in due taglie, invece dello
+   stesso segno sproporzionato su uno dei due.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --tv-tacca:        9px;   /* la lunghezza del braccio */
+  --tv-tacca-dentro: 3px;   /* quanto rientra dal bordo */
+  --tv-tacca-vena:   1px;   /* lo spessore della riga */
+}
+
+/* Le tacche si appoggiano al riquadro: senza un riferimento finirebbero
+   agli angoli della pagina. Dove la posizione c'era gia' (il pannello, il
+   riquadro, la scheda dei traguardi) questa riga non cambia niente. */
+.tv-panel,
+.tv-modulo,
+.org-tipo,
+.org-confronto-scorre,
+.oss-ricerca,
+.ach-card,
+.cas-scheda,
+.sel-org-invito,
+.cred-scelta,
+.tv-comando,
+.ing-riga,
+.pixel-bg .ui-errore,
+.pixel-bg .ui-esito,
+.ui-btn,
+.px-btn,
+.confirm-pill,
+.cancel-pill,
+.ui-chip,
+.ui-voto,
+.ui-tile,
+.pixel-bg .mgmt-tile,
+.ui-ai-send,
+.ui-action,
+.px-icon:not(.bare),
+.skill-more,
+.pixel-bg .ui-member,
+.pixel-bg .card-row,
+.pixel-bg .menu-item,
+.arena-scheda,
+.arena-modulo,
+.arena-annuncio,
+.arena-traguardo,
+.arena-avviso,
+.lex-scelta,
+.lex-modo,
+.lex-riga,
+.tc-vita,
+.tc-strada,
+.tc-lavoro,
+.tc-stanza,
+.tc-testata,
+.tc-finestra,
+.tc-guida,
+.tc-finestra-chiudi {
+  position: relative;
+}
+
+.tv-panel::before,
+.tv-modulo::before,
+.org-tipo::before,
+.org-confronto-scorre::before,
+.oss-ricerca::before,
+.ach-card::before,
+.cas-scheda::before,
+.sel-org-invito::before,
+.cred-scelta::before,
+.tv-comando::before,
+.ing-riga::before,
+.pixel-bg .ui-errore::before,
+.pixel-bg .ui-esito::before,
+.ui-btn::before,
+.px-btn::before,
+.confirm-pill::before,
+.cancel-pill::before,
+.ui-chip::before,
+.ui-voto::before,
+.ui-tile::before,
+.pixel-bg .mgmt-tile::before,
+.ui-ai-send::before,
+.ui-action::before,
+.px-icon:not(.bare)::before,
+.skill-more::before,
+.pixel-bg .ui-member::before,
+.pixel-bg .card-row::before,
+.pixel-bg .menu-item::before,
+.arena-scheda::before,
+.arena-modulo::before,
+.arena-annuncio::before,
+.arena-traguardo::before,
+.arena-avviso::before,
+.lex-scelta::before,
+.lex-modo::before,
+.lex-riga::before,
+.tc-vita::before,
+.tc-strada::before,
+.tc-lavoro::before,
+.tc-stanza::before,
+.tc-testata::before,
+.tc-finestra::before,
+.tc-guida::before,
+.tc-finestra-chiudi::before {
+  content: '';
+  position: absolute;
+  inset: var(--tv-tacca-dentro);
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 0    0    / var(--tv-tacca) var(--tv-tacca-vena) no-repeat,
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 0    0    / var(--tv-tacca-vena) var(--tv-tacca) no-repeat,
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 100% 0    / var(--tv-tacca) var(--tv-tacca-vena) no-repeat,
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 100% 0    / var(--tv-tacca-vena) var(--tv-tacca) no-repeat,
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 0    100% / var(--tv-tacca) var(--tv-tacca-vena) no-repeat,
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 0    100% / var(--tv-tacca-vena) var(--tv-tacca) no-repeat,
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 100% 100% / var(--tv-tacca) var(--tv-tacca-vena) no-repeat,
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) 100% 100% / var(--tv-tacca-vena) var(--tv-tacca) no-repeat;
+}
+
+/* La taglia piccola: su un comando alto quaranta pixel il braccio da nove
+   arriva quasi a meta' del lato, e la tacca smette di essere un angolo per
+   diventare una seconda cornice. Sei e due lo tengono un accenno. */
+.ui-btn,
+.px-btn,
+.confirm-pill,
+.cancel-pill,
+.ui-chip,
+.ui-voto,
+.ui-ai-send,
+.ui-action,
+.px-icon:not(.bare),
+.skill-more,
+.cas-scheda,
+.sel-org-invito,
+.cred-scelta,
+.tv-comando,
+.ing-riga,
+.pixel-bg .ui-errore,
+.pixel-bg .ui-esito,
+.pixel-bg .ui-member,
+.pixel-bg .card-row,
+.pixel-bg .menu-item,
+.arena-scheda,
+.arena-modulo,
+.arena-annuncio,
+.arena-avviso,
+.lex-scelta,
+.lex-riga,
+.tc-vita,
+.tc-strada,
+.tc-lavoro,
+.tc-finestra-chiudi {
+  --tv-tacca: 6px;
+  --tv-tacca-dentro: 2px;
+}
+
+/* Sotto il dito le tacche si accendono insieme al bordo: e' lo stesso
+   passaggio di luce che gia' fa la cornice, e se restassero spente
+   sembrerebbero appartenere a un altro strato. Nessuno spostamento — quello
+   lo fa il pulsante intero quando lo si preme, tacche comprese. */
+.ui-btn:hover::before,
+.px-btn:hover::before,
+.confirm-pill:hover::before,
+.cancel-pill:hover::before,
+.ui-tile:hover::before,
+.pixel-bg .mgmt-tile:hover::before,
+.ui-action:hover::before,
+.px-icon:not(.bare):hover::before,
+.pixel-bg a.ui-member:hover::before,
+.pixel-bg .card-row:hover::before,
+.pixel-bg .menu-item:hover::before {
+  --tv-border-forte: var(--tv-primary);
+}
+
+/* Un comando spento non ha angoli da marcare. */
+.ui-btn:disabled::before,
+.px-btn:disabled::before,
+.confirm-pill:disabled::before,
+.cancel-pill:disabled::before,
+.ui-btn[aria-disabled='true']::before {
+  --tv-border-forte: var(--tv-ghost);
+}
+
+/* ─── Intestazione ─── */
+.tv-testa {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* L'intestazione che apre e chiude il pannello: e' un pulsante, ma non deve
+   sembrare un pulsante — deve sembrare la riga di comando che era, con
+   [+] e [-] all'estremita' a dire che si puo' toccare. */
+.tv-testa.is-comando {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tv-testa.is-comando:hover .tv-titolo,
+.tv-testa.is-comando:focus-visible .tv-titolo { color: var(--tv-primary); }
+
+.tv-piega {
+  margin-left: auto;
+  font-family: var(--tv-font);
+  font-size: 0.7rem;
+  color: var(--tv-dim);
+}
+.tv-testa.is-comando:hover .tv-piega { color: var(--tv-primary); }
+
+/* Chiuso, il pannello e' solo la sua riga di titolo: niente aria sotto. */
+.tv-panel.is-chiuso { padding-bottom: 10px; }
+.tv-panel.is-chiuso .tv-riga-doppia { margin-bottom: 0; }
+
+.tv-titolo {
+  margin: 0;
+  font-family: var(--tv-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tv-bright);
+  text-shadow: 0 0 8px var(--tv-glow);
+}
+
+/* Il prompt ">>" e' decorazione: lo si vede, non lo si legge ad alta voce. */
+.tv-prompt {
+  color: var(--tv-secondary);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.tv-meta {
+  margin-left: auto;
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* ─── Le righe divisorie ───
+   "===" e "---" disegnate invece che scritte: un lettore di schermo non ha
+   niente da leggere e la riga resta allineata a qualunque larghezza. */
+.tv-riga,
+.tv-riga-doppia {
+  height: 3px;
+  margin: 8px 0;
+  background-repeat: repeat-x;
+}
+
+.tv-riga-doppia {
+  background-image:
+    linear-gradient(var(--tv-secondary), var(--tv-secondary)),
+    linear-gradient(var(--tv-secondary), var(--tv-secondary));
+  background-size: 4px 1px, 4px 1px;
+  background-position: 0 0, 0 2px;
+  opacity: 0.55;
+}
+
+.tv-riga {
+  background-image: linear-gradient(var(--tv-ghost), var(--tv-ghost));
+  background-size: 5px 1px;
+  background-position: 0 1px;
+}
+
+/* ─── Piede ─── */
+.tv-piede {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+.tv-piede .tv-valore-piede { color: var(--tv-primary); }
+.tv-piede.is-errore  .tv-valore-piede { color: var(--tv-error); }
+.tv-piede.is-attesa  .tv-valore-piede { color: var(--tv-warn); }
+
+/* ─────────────────────────────────────────────────────────────
+   Le righe di dati: etichetta a sinistra, valore a destra, puntini in mezzo
+   ───────────────────────────────────────────────────────────── */
+
+.tv-rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tv-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.tv-row-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* L'etichetta non va a capo: se lo spazio manca si accorcia lei, perche' il
+   motivo per cui si guarda la riga e' la cifra in fondo. */
+.tv-row-label > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* I puntini che portano l'occhio dall'etichetta alla cifra: il modo in cui
+   un tabulato incolonna i numeri senza usare una tabella. */
+.tv-row-label::after {
+  content: '';
+  flex: 1 1 auto;
+  min-width: 12px;
+  align-self: center;
+  height: 1px;
+  background-image: linear-gradient(90deg, var(--tv-ghost) 0 2px, transparent 2px 4px);
+}
+
+.tv-row-value {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--tv-bright);
+  text-shadow: 0 0 7px var(--tv-glow);
+  white-space: nowrap;
+}
+
+.tv-row-value.is-spento { color: var(--tv-dim); text-shadow: none; font-weight: 400; }
+.tv-row-value.is-errore { color: var(--tv-error); text-shadow: 0 0 7px rgba(255, 92, 92, 0.3); }
+.tv-row-value.is-attesa { color: var(--tv-warn); text-shadow: 0 0 7px rgba(255, 179, 71, 0.3); }
+
+/* La riga si accende al passaggio: il minimo perche' si capisca quale si sta
+   leggendo, senza spostare niente. */
+.tv-rows.is-vivo .tv-row:hover .tv-row-value { color: #fff; }
+.tv-rows.is-vivo .tv-row:hover .tv-row-label { color: var(--tv-primary); }
+
+/* ─── Righe che si scelgono ───
+   Quando l'elenco non e' un tabulato ma l'indice di quello che si legge
+   sopra, ogni riga e' un pulsante. Da pulsante si porterebbe dietro fondo,
+   cornice e carattere suoi: qui torna a essere una riga, e cambia solo
+   quel tanto che serve a far capire che si puo' toccare. */
+.tv-rows.is-scelta { gap: 0; }
+
+.tv-row.is-sceglibile {
+  /* Lo sfondo della riga scelta deborda di otto pixel per lato, cosi' il
+     rettangolo acceso comprende anche l'aria intorno al testo invece di
+     tagliarla. */
+  margin-inline: -8px;
+  width: calc(100% + 16px);
+  padding: 4px 8px;
+  background: none;
+  border: 0;
+  border-radius: var(--tv-radius);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tv-row.is-sceglibile:hover .tv-row-value { color: #fff; }
+.tv-row.is-sceglibile:hover .tv-row-label { color: var(--tv-primary); }
+
+/* La riga scelta e' quella che si sta leggendo in cima: il segno a sinistra
+   e' la stessa cosa che il ">>" dice nell'intestazione. */
+.tv-row.is-attiva {
+  background: var(--tv-surface);
+  box-shadow: inset 2px 0 0 var(--tv-primary);
+}
+
+.tv-row.is-attiva .tv-row-label { color: var(--tv-primary); }
+.tv-row.is-attiva .tv-row-value { color: #fff; }
+
+.tv-row.is-sceglibile:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 1px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Il valore in evidenza: quello che si legge da lontano
+   ───────────────────────────────────────────────────────────── */
+
+.tv-focale {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 2px;
+}
+
+.tv-focale-num {
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: var(--tv-bright);
+  text-shadow: 0 0 12px var(--tv-glow-forte);
+}
+
+.tv-focale-unita {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tv-primary);
+}
+
+.tv-focale-nota {
+  margin-left: auto;
+  font-size: 0.64rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   La barra: blocchi pieni e blocchi vuoti, come ███████░░░
+   ───────────────────────────────────────────────────────────── */
+
+.tv-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  font-family: var(--tv-font);
+}
+
+.tv-progress-label {
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+  white-space: nowrap;
+}
+
+/* Le parentesi quadre della barra da terminale. Sono decorazione: il valore
+   lo dice la percentuale scritta accanto e l'aria-label della barra. */
+.tv-bar-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--tv-secondary);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.tv-bar-wrap::before { content: '['; }
+.tv-bar-wrap::after  { content: ']'; }
+
+.tv-bar {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 40px;
+  height: 12px;
+  background: var(--tv-track);
+  overflow: hidden;
+}
+
+.tv-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--tv-primary);
+  box-shadow: 0 0 8px var(--tv-glow);
+  transition: width var(--mo-breve) var(--mo-blocchi);
+}
+
+/* Il taglio in blocchi: una griglia di fessure del colore del fondo,
+   sopra riempimento e traccia. E' quello che trasforma una barra continua
+   in una fila di caratteri. */
+.tv-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(var(--tv-cella) - 2px),
+    var(--tv-bg) calc(var(--tv-cella) - 2px) var(--tv-cella)
+  );
+}
+
+.tv-bar.is-piena > span { background: var(--tv-bright); }
+.tv-bar.is-errore > span { background: var(--tv-error); box-shadow: 0 0 8px rgba(255, 92, 92, 0.35); }
+
+.tv-progress-pct {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--tv-bright);
+  text-shadow: 0 0 7px var(--tv-glow);
+  min-width: 3.2em;
+  text-align: right;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Stati: attesa, errore, esito
+   ───────────────────────────────────────────────────────────── */
+
+.tv-stato {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+.tv-stato.is-errore { color: var(--tv-error); }
+.tv-stato.is-ok     { color: var(--tv-success); }
+
+/* Il cursore che lampeggia in fondo a una riga di attesa. */
+.tv-cursore {
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  vertical-align: -0.12em;
+  background: var(--tv-primary);
+  animation: tv-cursore 1.1s steps(1, end) infinite;
+}
+
+@keyframes tv-cursore {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* Il vuoto, detto come lo direbbe un terminale. */
+/* Il vuoto di un pannello e la nota a pie' di un pannello sono la stessa
+   cosa a vedersi — una riga piccola e spenta sotto i dati — e hanno due
+   nomi perche' dicono due cose diverse: "qui non c'e' niente" e "questo
+   numero va letto cosi'". Una regola sola, cosi' non possono divergere. */
+.tv-vuoto,
+.tv-nota {
+  margin: 8px 0 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--tv-dim);
+  line-height: 1.6;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Valori sparsi fuori dai pannelli
+   Ricompense, pillole XP/crediti/livello, contatori: sono dati anche
+   loro, e devono parlare la stessa lingua senza portarsi dietro tutto
+   il pannello.
+   ───────────────────────────────────────────────────────────── */
+
+.tv-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: rgba(5, 10, 16, 0.72);
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--tv-bright);
+  text-shadow: 0 0 6px var(--tv-glow);
+}
+
+.tv-chip .tv-chip-label {
+  font-weight: 400;
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+  text-shadow: none;
+}
+
+/* Le pillole gia' esistenti nell'app: stesso markup, altra pelle. */
+.pixel-bg .xp-circle,
+.pixel-bg .credits-pill,
+.pixel-bg .level-pill {
+  padding: 3px 7px;
+  border-radius: var(--tv-radius);
+  border: 1px solid var(--tv-border);
+  background: rgba(5, 10, 16, 0.72);
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 6px var(--tv-glow);
+}
+
+.pixel-bg .xp-circle    { color: var(--tv-bright); }
+.pixel-bg .level-pill   { color: var(--tv-primary); }
+.pixel-bg .credits-pill { color: var(--ui-gold); border-color: rgba(255, 194, 51, 0.32); text-shadow: 0 0 6px rgba(255, 194, 51, 0.28); }
+.pixel-bg .credits-pill::before { content: '◉'; margin-right: 4px; opacity: 0.75; }
+
+/* Ricompensa e conto alla rovescia della quest: la riga dei numeri di una
+   quest e' una riga di terminale. Il rosso dello scaduto resta il rosso
+   dell'allarme — e' l'unico posto dove il colore non e' decorazione. */
+.pixel-bg .ui-reward {
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+.pixel-bg .ui-reward .ui-exp,
+.pixel-bg .ui-reward .ui-gold {
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.pixel-bg .ui-reward .ui-exp { color: var(--tv-primary); text-shadow: 0 0 6px var(--tv-glow); }
+.pixel-bg .ui-reward .ui-gold { color: var(--ui-gold); text-shadow: 0 0 6px rgba(255, 194, 51, 0.28); }
+
+.pixel-bg .ui-timer {
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 2px 6px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: rgba(5, 10, 16, 0.72);
+}
+
+.pixel-bg .ui-timer.ok   { color: var(--tv-primary); text-shadow: 0 0 7px var(--tv-glow); }
+.pixel-bg .ui-timer.soon { color: var(--tv-warn); border-color: rgba(255, 179, 71, 0.4); text-shadow: 0 0 7px rgba(255, 179, 71, 0.3); }
+.pixel-bg .ui-timer.late { color: var(--ui-alert-testo); border-color: rgba(224, 27, 27, 0.5); text-shadow: 0 0 7px rgba(255, 92, 92, 0.35); }
+
+/* Il contatore delle volte su una medaglia e i voti della review: cifre
+   piccole, ma cifre. */
+.ach-badge-volte {
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  border-radius: var(--tv-radius);
+}
+
+.pixel-bg .ui-voto {
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--tv-radius);
+}
+
+/* ─── Sottotitoli dentro un pannello ─── */
+.tv-sottotitolo {
+  margin: 8px 0 6px;
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* ─── La riga di un achievement ───
+   Ha dentro una barra, un conteggio e una ricompensa: e' un record, e ne
+   prende la superficie. La descrizione resta pero' nel carattere di
+   lettura dell'app — una frase intera in mono, a questa misura, si legge
+   peggio, e la regola qui e' che l'effetto non costa mai leggibilita'. */
+.ach-card {
+  position: relative;
+  background: var(--tv-vetro);
+  border: var(--tv-bordo) solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.75);
+}
+
+.ach-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(0, 0, 0, var(--tv-scan-forza)) 0 1px,
+    transparent 1px var(--tv-scan-passo)
+  );
+}
+
+.ach-card-testo > b {
+  font-family: var(--tv-font);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tv-bright);
+  text-shadow: 0 0 8px var(--tv-glow);
+}
+
+.ach-card.is-cliccabile:hover,
+.ach-card.is-cliccabile:focus-visible {
+  background: var(--tv-surface);
+  border-color: var(--tv-border-forte);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.7), 0 0 12px var(--tv-glow);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Interazione
+   Un pannello su cui si puo' cliccare si accende appena: piu' luce sulla
+   cornice, niente movimento.
+   ───────────────────────────────────────────────────────────── */
+
+.tv-panel.is-cliccabile {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color var(--mo-istante) var(--mo-continuo),
+              box-shadow   var(--mo-istante) var(--mo-continuo);
+}
+
+.tv-panel.is-cliccabile:hover,
+.tv-panel.is-cliccabile:focus-visible {
+  border-color: var(--tv-border-forte);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.7), 0 0 12px var(--tv-glow);
+}
+
+.tv-panel.is-cliccabile:active { border-color: var(--tv-primary); }
+
+/* L'anello di chi naviga da tastiera resta quello dell'app: due sistemi di
+   focus diversi nella stessa pagina sarebbero un errore, non uno stile. */
+.tv-panel.is-cliccabile:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Larghezze
+   Su schermo stretto le righe si accorciano prima dei numeri: la cifra e'
+   il motivo per cui si guarda il pannello, l'etichetta si puo' troncare.
+   ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 420px) {
+  .tv-panel { padding: 12px; }
+  .tv-row-label { font-size: 0.64rem; letter-spacing: 0.05em; }
+  .tv-focale-num { font-size: 1.4rem; }
+  .tv-progress { flex-wrap: wrap; }
+  .tv-progress-label { flex: 1 0 100%; }
+}
+
+/* Sotto i 320px i puntini rubano lo spazio alla cifra. */
+@media (max-width: 320px) {
+  .tv-row-label::after { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .tv-panel { padding: 18px 20px; }
+  .tv-titolo { font-size: 0.78rem; }
+  .tv-row-label { font-size: 0.72rem; }
+  .tv-row-value { font-size: 0.88rem; }
+  .tv-focale-num { font-size: 1.9rem; }
+}
+
+/* Le griglie di pannelli: due colonne dove c'e' spazio, una sul telefono. */
+.tv-griglia {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 700px) {
+  .tv-griglia.a-due { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  /* Il primo pannello di una griglia e' il riepilogo: prende la riga
+     intera, gli altri si affiancano sotto. */
+  .tv-griglia.a-due > :first-child { grid-column: 1 / -1; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Innesti sulle superfici che l'app aveva gia'
+
+   Non tutti i numeri stanno dentro un pannello nuovo: alcuni vivono in
+   componenti che restano dove sono — la riga di una quest, il codice
+   dell'organizzazione, i rami dello Skill Tree. Qui prendono la lingua
+   del terminale senza cambiare markup.
+   ───────────────────────────────────────────────────────────── */
+
+/* ─── Varianti del valore ─── */
+.tv-row-value.is-oro {
+  color: var(--ui-gold);
+  text-shadow: 0 0 7px rgba(255, 194, 51, 0.28);
+}
+
+/* Un valore che e' una parola, non una cifra (il nome di un achievement, per
+   dire): va a capo se serve e non si prende la luce dei numeri. */
+.tv-row-value.is-testo {
+  white-space: normal;
+  text-align: right;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--tv-primary);
+  text-shadow: none;
+}
+
+/* ─── Il valore isolato (codice organizzazione, voto di un criterio) ───
+   Era una pillola bianca: la stessa cifra, in due schermate diverse, aveva
+   due facce. */
+.ui-stat {
+  display: inline-block;
+  padding: 8px 12px;
+  border: var(--tv-bordo) solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-vetro);
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--tv-bright);
+  text-shadow: 0 0 7px var(--tv-glow);
+}
+
+/* ─── Scheda persona: i numeri stanno nella terza colonna ─── */
+.ui-userhead-tv { min-width: 190px; }
+
+/* Sotto una certa larghezza tre colonne vogliono dire etichette tagliate:
+   il terminale passa sotto, largo quanto la scheda. */
+@media (max-width: 560px) {
+  .ui-userhead { grid-template-columns: auto 1fr; }
+  .ui-userhead-tv { grid-column: 1 / -1; min-width: 0; }
+}
+
+/* ─── Profilo: il pannello STATUS sta sotto l'avatar ─── */
+.ui-profile-card .tv-panel { width: 100%; }
+
+/* ─── Elenchi di dati dentro un pannello ───
+   Sblocchi recenti e classifica: righe separate da un filo tratteggiato,
+   nome in chiaro, cifra a destra. */
+.tv-panel .ach-recenti li,
+.tv-panel .ach-storico li,
+.tv-panel .ach-classifica li {
+  border-top: 1px dotted var(--tv-ghost);
+  padding: 8px 0;
+}
+
+.tv-panel .ach-recenti li:first-child,
+.tv-panel .ach-storico li:first-child,
+.tv-panel .ach-classifica li:first-child { border-top: 0; }
+
+.tv-panel .ach-recenti b,
+.tv-panel .ach-storico b {
+  font-family: var(--tv-font);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--tv-bright);
+  text-shadow: 0 0 7px var(--tv-glow);
+}
+
+.tv-panel .ach-recenti small,
+.tv-panel .ach-storico small {
+  font-family: var(--tv-font);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  color: var(--tv-dim);
+}
+
+.tv-panel .ach-classifica a {
+  font-family: var(--tv-font);
+  font-size: 0.72rem;
+  color: var(--tv-primary);
+}
+
+.tv-panel .ach-classifica a:hover { color: var(--tv-bright); }
+
+.tv-panel .ach-classifica span {
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--tv-bright);
+  text-shadow: 0 0 7px var(--tv-glow);
+}
+
+/* ─── La nota sotto la barra di un achievement ───
+   Il conteggio adesso e' dentro la barra: qui resta solo il commento. */
+.ach-numeri {
+  margin: 6px 0 0;
+  font-family: var(--tv-font);
+}
+
+.ach-numeri small {
+  font-size: 0.66rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* ─── Le barre dei rami dello Skill Tree ───
+   Restano del colore del ramo — quello e' l'unico modo per riconoscerlo a
+   colpo d'occhio — ma prendono il taglio a blocchi e gli angoli vivi. */
+.skill-branch-bar {
+  position: relative;
+  height: 12px;
+  border-radius: 0;
+  background: var(--tv-track);
+  border: var(--tv-bordo) solid var(--tv-border);
+}
+
+.skill-branch-bar > span {
+  border-radius: 0;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4);
+}
+
+.skill-branch-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(var(--tv-cella) - 2px),
+    var(--tv-bg) calc(var(--tv-cella) - 2px) var(--tv-cella)
+  );
+}
+
+/* I conteggi accanto alle barre: "3/8" e' un dato, non un'etichetta. */
+.skill-branch-count,
+.skill-team-count,
+.skill-reco-item small {
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.skill-branch-count,
+.skill-team-count {
+  color: var(--tv-bright);
+  text-shadow: 0 0 6px var(--tv-glow);
+}
+
+/* ─── Prezzi in crediti (marketplace, acquisti) ───
+   Il prezzo e' un valore economico: stessa lingua degli altri numeri. */
+.tv-prezzo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ui-gold);
+  text-shadow: 0 0 6px rgba(255, 194, 51, 0.28);
+}
+
+.tv-prezzo .tv-prezzo-unita {
+  font-weight: 400;
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+  text-shadow: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Presence Streak
+   La medaglia del livello, dentro al pannello e appoggiata all'avatar.
+   ───────────────────────────────────────────────────────────── */
+
+.ps-testa {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 2px;
+}
+
+.ps-testa .tv-focale { flex: 1 1 auto; margin: 0; }
+
+.ps-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.ps-badge img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* Sotto il primo livello la medaglia c'e' lo stesso, spenta: si deve vedere
+   che cosa si sta per conquistare, come per le competenze da certificare. */
+.ps-badge.is-spento img { filter: grayscale(0.85) brightness(0.55) contrast(0.9); }
+
+/* Sull'avatar: appoggiata all'angolo in basso a destra, sul bordo del
+   disegno e non sopra la faccia. */
+.ps-badge-avatar {
+  position: absolute;
+  right: -2%;
+  bottom: 2%;
+  z-index: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+@media (max-width: 380px) {
+  .ps-testa { gap: 10px; }
+  .ps-badge-avatar { right: -4%; bottom: 0; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Accessibilita'
+   ───────────────────────────────────────────────────────────── */
+
+/* Chi ha chiesto di fermare le animazioni non vede ne' il respiro del tubo
+   ne' il cursore ne' il riempimento delle barre. Le scanline restano: sono
+   una texture ferma, non un movimento. */
+@media (prefers-reduced-motion: reduce) {
+  .tv-panel::after { animation: none; }
+  .tv-cursore { animation: none; opacity: 1; }
+  .tv-bar > span { transition: none; }
+}
+
+/* ═══ Le tavole dell'osservatorio ══════════════════════════════
+   Sono tabelle vere — righe e colonne, intestazioni, cifre incolonnate a
+   destra — perche' chi le legge di mestiere le legge cosi', e perche' da
+   li' escono in CSV senza cambiare forma. Prendono la superficie del
+   terminale come tutto il resto dei dati.
+
+   Scorrono per conto loro in orizzontale: otto colonne su un telefono non
+   ci stanno, e la pagina intera non deve slittare di lato per colpa di
+   una tabella. */
+.oss-tavola-scorre {
+  overflow-x: auto;
+  margin: 10px -4px 0;
+  padding: 0 4px 4px;
+}
+
+.oss-tavola {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--tv-font);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.oss-tavola th,
+.oss-tavola td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--tv-ghost);
+}
+
+.oss-tavola th {
+  color: var(--tv-dim);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.66rem;
+  position: sticky;
+  top: 0;
+  background: var(--tv-vetro);
+}
+
+.oss-tavola td { color: var(--tv-primary); }
+.oss-tavola td:first-child { color: var(--tv-bright); white-space: normal; min-width: 12ch; }
+
+/* Le cifre a destra: incolonnate si confrontano con l'occhio, sparse no. */
+.oss-tavola .in-cifre { text-align: right; }
+
+.oss-tavola tbody tr:last-child th,
+.oss-tavola tbody tr:last-child td { border-bottom: 0; }
+
+/* La riga che non si puo' diffondere resta, ma senza numeri: sparirla del
+   tutto nasconderebbe anche il fatto che esiste, e quel fatto e' un dato. */
+.oss-tavola tr.is-riservata td { color: var(--tv-dim); }
+.oss-riservato { color: var(--tv-ghost); }
+
+.oss-scarico {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.oss-filtri { margin-bottom: 6px; }
+
+/* ─── Un modulo appoggiato sullo sfondo ───
+   Alcune schermate hanno un campo o due senza un pannello intorno: il campo
+   si vede, perche' un campo ha il suo fondo, ma l'etichetta sopra no. Questa
+   classe da' loro lo stesso vetro dei pannelli, ed e' quello che ci vuole —
+   un modulo e' un pezzo di interfaccia, non una scritta sul cielo. */
+.tv-modulo {
+  padding: var(--tv-pad);
+  background: var(--tv-vetro);
+  border: var(--tv-bordo) solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+.tv-modulo .label {
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* Un messaggio d'errore o di conferma puo' comparire ovunque, anche dove
+   pannelli non ce ne sono: si porta dietro il suo vetro, cosi' non c'e'
+   schermata in cui possa finire illeggibile. */
+.pixel-bg .ui-errore,
+.pixel-bg .ui-esito {
+  padding: 10px 12px;
+  border-radius: var(--tv-radius);
+  background: var(--ui-panel);
+}
+
+/* ─── Azienda o gruppo: la scelta ───
+   Questa schermata non aveva nessuno stile: due titoli, due righe di testo e
+   una tabella appoggiati sulla fotografia. Ed e' la schermata in cui si
+   prende la decisione che poi non si cambia — quella che merita meno di
+   tutte di sembrare una bozza.
+
+   Le due strade sono due schede affiancate, di vetro, con il pulsante in
+   fondo a ognuna; il confronto e' una tabella dentro il suo vetro, che da
+   telefono scorre di lato invece di stringersi fino a spezzare le parole. */
+.org-tipi {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.org-tipo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--tv-pad);
+  background: var(--tv-vetro);
+  border: var(--tv-bordo) solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.org-tipo h2 {
+  margin: 0;
+  font-family: var(--tv-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tv-bright);
+  text-shadow: 0 0 8px var(--tv-glow);
+}
+
+.org-tipo-riga {
+  margin: 0;
+  flex: 1;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  color: var(--tv-dim);
+}
+
+/* La tabella scorre per conto suo: nove righe per tre colonne su uno
+   schermo da telefono, strette a forza, diventano parole spezzate. */
+.org-confronto-scorre {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: var(--tv-pad);
+  background: var(--tv-vetro);
+  border: var(--tv-bordo) solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+
+.org-confronto {
+  width: 100%;
+  min-width: 460px;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.org-confronto th,
+.org-confronto td {
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--tv-ghost);
+}
+
+.org-confronto thead th {
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tv-primary);
+  border-bottom-color: var(--tv-border-forte);
+}
+
+/* La prima colonna e' la domanda, le altre due la risposta: la domanda sta
+   indietro di un passo, cosi' l'occhio corre sulle risposte. */
+.org-confronto tbody th {
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+  white-space: nowrap;
+}
+.org-confronto tbody td { color: var(--tv-bright); }
+.org-confronto tbody tr:last-child th,
+.org-confronto tbody tr:last-child td { border-bottom: 0; }
+
+@media (min-width: 700px) {
+  .org-tipi { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── Righe di comando dentro un pannello ───
+   Una voce che porta altrove o accende qualcosa: a sinistra come si chiama,
+   a destra che cosa fa. Serve alle impostazioni e a ogni elenco di scelte
+   che non e' un tabulato di numeri — quelli hanno gia' `.tv-rows`.
+
+   Prima erano righe nude sullo sfondo, separate da un filo: su una
+   fotografia un filo non si vede, e quello che ci stava sopra nemmeno. */
+.tv-comandi { display: flex; flex-direction: column; gap: 8px; margin: 6px 0 0; }
+
+.tv-comando {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+
+.tv-comando > a,
+.tv-comando > .tv-comando-nome {
+  font-family: var(--tv-font);
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tv-bright);
+  text-decoration: none;
+}
+.tv-comando > a:hover,
+.tv-comando > a:focus-visible { color: var(--tv-primary); text-decoration: underline; }
+
+.tv-comando .tv-comando-nota {
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  color: var(--tv-dim);
+}
+
+/* ─── La zona di ricerca ───
+   I campi, il tasto dei filtri e il menu che apre stavano appoggiati sullo
+   sfondo: sotto il cielo di mezzogiorno le etichette si perdevano e i bordi
+   dei campi sparivano. Adesso stanno tutti dentro lo stesso vetro, che e'
+   anche il modo di dire che sono una cosa sola — le domande da fare prima
+   di guardare l'elenco. */
+.oss-ricerca {
+  background: var(--tv-vetro);
+  border: var(--tv-bordo) solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  padding: var(--tv-pad);
+  margin-bottom: 12px;
+  box-shadow: inset 0 0 26px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.45);
+}
+.oss-ricerca > .lb-filtri { margin-bottom: 12px; }
+.oss-ricerca .label {
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+.oss-ricerca .oss-filtri-comando { margin-bottom: 0; }
+.oss-ricerca .oss-filtri:not([hidden]) { margin-top: 12px; }
+
+/* Il comando dei filtri: un pulsante e, quando il menu e' chiuso, quanti
+   ne restano accesi. Il numero e' la parte importante — un menu chiuso che
+   non dice di stare filtrando e' un menu che fa perdere tempo. */
+.oss-filtri-comando {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* Il tasto dei filtri e' un pulsante dell'applicazione, non un comando con
+   uno stile suo. Aveva il fondo trasparente e la cornice color `--tv-ghost`
+   — quello dei puntini e delle decorazioni, fatto per vedersi appena — e
+   appoggiato su una fotografia spariva: si vedeva la scritta e non si
+   capiva che ci si poteva premere sopra. Adesso la forma la porta
+   `buttons.css`, e qui resta solo quello che questo pulsante ha di suo. */
+.ui-btn.oss-filtri-tasto {
+  gap: 8px;
+  padding: 7px 12px;
+  min-height: auto;
+}
+.ui-btn.oss-filtri-tasto.is-aperto {
+  border-color: var(--tv-primary);
+  color: var(--tv-bright);
+}
+
+/* Il contatore: cifre tabulari perche' passando da 9 a 10 il pulsante non
+   deve allargarsi sotto il dito di chi sta per premerlo di nuovo. */
+.oss-filtri-quanti {
+  min-width: 1.5em;
+  padding: 1px 5px;
+  background: var(--tv-primary);
+  color: var(--tv-bg);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.oss-filtri-piede {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--tv-ghost);
+}
+
+/* Il nome apre la scheda: e' un pulsante, ma dentro una tabella deve
+   restare del testo, altrimenti la colonna smette di leggersi come una
+   colonna. Sottolineato solo al passaggio, cosi' la riga scelta si
+   riconosce senza che tutte sembrino link. */
+.oss-apre {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.oss-apre:hover,
+.oss-apre:focus-visible { text-decoration: underline; }
+
+.oss-tavola tr.is-scelta td { background: var(--tv-ghost); }
+.oss-tavola tr.is-scelta td:first-child { color: var(--tv-bright); }
+
+/* ─── La scheda di una competenza ────────────────────────────────────── */
+
+.oss-scheda-testa {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.oss-scheda-cifra {
+  font-family: var(--tv-font);
+  font-size: 1.6rem;
+  color: var(--tv-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+.oss-scheda-nota {
+  color: var(--tv-dim);
+  font-size: 0.72rem;
+  flex: 1;
+  min-width: 14ch;
+}
+
+.oss-chiudi {
+  background: none;
+  border: 1px solid var(--tv-ghost);
+  color: var(--tv-dim);
+  font-family: var(--tv-font);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+
+.oss-chiudi:hover,
+.oss-chiudi:focus-visible { color: var(--tv-bright); border-color: var(--tv-primary); }
+
+/* Quando una sola azienda fa quasi tutto, va detto prima dei numeri, non
+   dopo: e' la differenza fra una tendenza e il progetto di qualcuno. */
+.oss-avviso {
+  border-left: 2px solid var(--tv-primary);
+  padding-left: 10px;
+  margin-bottom: 10px;
+}
+
+.oss-scheda-due {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+@media (min-width: 640px) {
+  .oss-scheda-due { grid-template-columns: 1fr 1fr; gap: 20px; }
+}
+
+/* La curva: barre e basta. Un mese vuoto resta una colonna vuota, perche'
+   togliere i mesi senza certificazioni raddrizzerebbe le curve. */
+.oss-curva {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 96px;
+  margin: 8px 0 4px;
+}
+
+.oss-curva-colonna {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3px;
+}
+
+.oss-curva-barra {
+  width: 100%;
+  min-height: 1px;
+  background: var(--tv-primary);
+  opacity: 0.75;
+  position: relative;
+}
+
+.oss-curva-cifra {
+  position: absolute;
+  inset: auto 0 100% 0;
+  text-align: center;
+  font-family: var(--tv-font);
+  font-size: 0.6rem;
+  color: var(--tv-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.oss-curva-mese {
+  font-family: var(--tv-font);
+  font-size: 0.58rem;
+  color: var(--tv-dim);
+  white-space: nowrap;
+  height: 1em;
+}
+
+/* I livelli: quattro righe, perche' la distribuzione si legge tutta in una
+   volta e la media no. */
+.oss-livelli { margin-top: 8px; }
+
+.oss-livello {
+  display: grid;
+  grid-template-columns: 10ch 1fr 4ch;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+}
+
+.oss-livello-nome { color: var(--tv-dim); }
+
+.oss-livello-riga {
+  height: 8px;
+  background: var(--tv-ghost);
+  display: block;
+}
+
+.oss-livello-piena {
+  display: block;
+  height: 100%;
+  background: var(--tv-primary);
+  opacity: 0.8;
+}
+
+.oss-livello-cifra {
+  text-align: right;
+  color: var(--tv-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.oss-ripartizione .tv-vuoto { margin-top: 6px; }
+
+/* ─── Le schede dei profili ──────────────────────────────────────────── */
+
+/* La lettera e' l'unica cosa scritta a mano in tutta la dashboard: tutto il
+   resto sono fatti contati. Merita di leggersi come un testo e non come un
+   campo di una tabella. */
+.tal-lettera {
+  margin: 0 0 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--tv-ghost);
+  color: var(--tv-primary);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.lav-zona {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lav-accetto {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.lav-accetto input { width: auto; accent-color: var(--primary); }
+
+/* Le tre domande che compongono la lettera: corte, in colonna sul telefono
+   e affiancate quando c'e' spazio. */
+.lav-guida {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 8px 0 10px;
+}
+
+@media (min-width: 700px) {
+  .lav-guida { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* Gli elenchi delle impostazioni: che cosa sparisce, che cosa resta. Il
+   secondo e' piu' spento del primo perche' dice una cosa meno grave, e
+   l'occhio deve capirlo prima di leggere. */
+.imp-elenco {
+  margin: 6px 0 14px;
+  padding-left: 18px;
+  color: var(--tv-primary);
+  font-size: 0.74rem;
+  line-height: 1.6;
+}
+
+.imp-elenco li { margin-bottom: 4px; }
+.imp-elenco.is-resta { color: var(--tv-dim); }
+
+/* L'elenco di quello che non esce: termine e ragione, uno sotto l'altro.
+   E' una lista di definizioni perche' e' esattamente quello — un termine e
+   che cosa vuol dire — e chi usa un lettore di schermo lo sente come tale
+   invece che come due paragrafi scollegati. */
+.dir-elenco { margin: 10px 0 0; }
+
+.dir-voce {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--tv-ghost);
+}
+
+.dir-voce:last-child { border-bottom: 0; }
+
+.dir-voce dt {
+  color: var(--tv-bright);
+  font-family: var(--tv-font);
+  font-size: 0.74rem;
+}
+
+.dir-voce dd {
+  margin: 3px 0 0;
+  color: var(--tv-dim);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+/* Nella casella, la riga che era nuova quando si e' entrati. Resta segnata
+   finche' si sta li': far sbiadire sotto gli occhi proprio le righe che si
+   era venuti a leggere e' il modo piu' rapido di farle perdere. */
+.card-row.is-nuovo {
+  border-left: 2px solid var(--tv-primary);
+  padding-left: 10px;
+}
+
+/* Chi chiede piu' contrasto perde gli effetti: niente scanline, niente
+   alone, cornici piene, e le finestre tornano nere piene. Un quinto di
+   castello che passa attraverso e' esattamente il contrasto che questa
+   persona ha chiesto di non avere. Il pannello resta un terminale nella
+   forma, non piu' nella patina. */
+@media (prefers-contrast: more) {
+  :root {
+    --tv-border: rgba(74, 217, 255, 0.7);
+    --tv-dim: #a8dcf0;
+    --tv-ghost: #4a7488;
+    --tv-vetro: var(--tv-bg);
+    --tv-surface: #07121b;
+  }
+
+  .tv-panel::after { display: none; }
+
+  .tv-titolo,
+  .tv-row-value,
+  .tv-focale-num,
+  .tv-progress-pct,
+  .tv-chip,
+  .pixel-bg .ui-timer,
+  .pixel-bg .xp-circle,
+  .pixel-bg .credits-pill,
+  .pixel-bg .level-pill { text-shadow: none; }
+}
+
+/* Stampare uno schermo nero non ha senso: sul foglio il terminale torna
+   inchiostro su carta. */
+@media print {
+  .tv-panel {
+    background: #fff;
+    color: #000;
+    border-color: #000;
+    box-shadow: none;
+  }
+
+  .tv-panel::after { display: none; }
+
+  /* Sul foglio le tacche sparirebbero comunque nell'inchiostro: si spengono
+     tutte da qui, azzerando lo spessore della riga. */
+  :root { --tv-tacca-vena: 0; }
+
+  .tv-titolo, .tv-row-value, .tv-focale-num, .tv-progress-pct { color: #000; text-shadow: none; }
+  .tv-row-label, .tv-piede, .tv-meta { color: #333; }
+}

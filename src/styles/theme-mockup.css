@@ -1,0 +1,2878 @@
+/* ─────────────────────────────────────────────────────────────
+   Tema "mockup": guscio grafico ricavato dalle schermate di
+   riferimento in "ACHIVIA schermate/".
+
+   Sta in un file a parte e viene caricato DOPO index.css: qui
+   dentro c'è solo l'aspetto (sfondo, pannelli, navbar, campi,
+   pulsanti), mentre la struttura delle pagine resta la sua.
+   Per tornare indietro basta non importarlo da main.jsx.
+
+   Valori misurati sugli screenshot:
+     pannello   nero al 60% sopra lo sfondo
+     navbar     #0b0d11
+     testo      grigio #95999e, titoli pixel bianchi
+     accenti    EXP #00bf63, badge #ff3131, crediti oro
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --ui-sky-top:    #16223a;
+  --ui-sky-bottom: #223857;
+
+  /* Il vetro nero delle superfici.
+     Era piu' chiaro — 0.60, 0.45 e 0.55 — e su un fondo fotografico non
+     bastava: misurato sul punto piu' luminoso del cielo di mezzogiorno, il
+     testo di servizio si fermava a 3,1:1 e il rosso degli errori a 2,9,
+     sotto la soglia di leggibilita' per un testo normale. Adesso sono
+     tarati sullo stesso valore del vetro del terminale, che quella prova la
+     passava: il velo si vede ancora — lo sfondo respira sotto — ma quello
+     che c'e' scritto sopra si legge a qualsiasi ora del giorno. */
+  --ui-panel:      rgba(0, 0, 0, 0.78);
+  --ui-panel-soft: rgba(0, 0, 0, 0.74);
+  --ui-tile:       rgba(0, 0, 0, 0.76);
+  --ui-bar:        #0b0d11;
+
+  --ui-text:       #ffffff;
+  --ui-body:       #b9bdc4;
+  --ui-dim:        #95999e;
+
+  --ui-exp:        #00bf63;
+  --ui-gold:       #ffc233;
+  /* Il rosso ha due mestieri e una tinta sola non li faceva bene tutti e
+     due. Da fondo del pallino rosso portava il bianco a 3,7 contro 1, sotto
+     la soglia; scritto sui pannelli scuri stava a 4,9, ma il pannello e' nero
+     al 60% sopra un'immagine e sulla zona chiara del castello scendeva a 3,8.
+     Due tinte: una regge il bianco sopra di se' (4,8), l'altra si legge sul
+     pannello anche nel punto peggiore (4,6).
+
+     Il rosso scritto e' il piu' acceso che passa quella soglia, non il piu'
+     leggibile: serve anche a dare l'allarme — e' il colore del conto alla
+     rovescia scaduto — e un rosso slavato l'allarme non lo da'. */
+  --ui-alert:       #e01b1b;
+  /* Il rosso si legge, anche sul vetro: a #ff5c5c si fermava a 4,4:1 sul
+     vetro del terminale, e un messaggio d'errore e' la cosa che meno di
+     tutte si puo' permettere di non essere letta. */
+  --ui-alert-testo: #ff7a7a;
+  --ui-link:       #5ec8e0;
+
+  /* L'anello di chi naviga da tastiera. Ce n'era una seconda tinta, scura,
+     per i campi: erano bianchi e l'azzurro chiaro ci spariva sopra (1.9:1).
+     Ora anche i campi hanno la cornice scura dei pulsanti, e la superficie
+     e' una sola — 9.2:1 su tutto. */
+  --ui-focus:      #5ec8e0;
+
+  /* Le misure del testo. Erano ventotto, scelte una alla volta: molte
+     differivano di mezzo pixel — invisibili — e tre stavano sotto i sette,
+     dove il font a pixel perde i tratti e le lettere si impastano. Sette
+     gradini bastano, e il piu' piccolo e' il minimo leggibile. */
+  --t-xs:       0.55rem;
+  --t-s:        0.64rem;
+  --t-m:        0.72rem;
+  --t-l:        0.82rem;
+  --t-xl:       0.92rem;
+  --t-2xl:      1.05rem;
+
+  /* Sopra c'e' il gradino dei titoli, che non e' la stessa scala: un titolo e
+     un'etichetta non si misurano con lo stesso metro. */
+  --t-3xl:      1.25rem;
+  --t-4xl:      1.5rem;
+  --t-5xl:      1.75rem;
+
+  /* Il marchio, che ha una misura sua sul telefono e una sullo schermo largo. */
+  --t-marchio:   1.6rem;
+  --t-marchio-l: 2rem;
+
+  --ui-radius:      22px;
+  --ui-radius-tile: 14px;
+
+  --ui-pixel: 'Press Start 2P', 'Courier New', monospace;
+
+  /* Il carattere dell'insegna.
+     La scritta "SHOP" non e' un'etichetta dell'app: e' dipinta dentro
+     l'illustrazione del negozio, e ha un'altra faccia rispetto ai nomi che
+     l'app scrive sotto agli altri riquadri. Misurata pixel per pixel e'
+     alta cinque unita' con il tratto di una — la griglia di Micro 5, che e'
+     un carattere costruito su cinque pixel di altezza. Le etichette degli
+     altri riquadri prendono quella, cosi' il pulsante che porta il nome
+     disegnato dentro e quelli che ce l'hanno scritto sopra dicono la stessa
+     cosa nello stesso modo. */
+  --ui-insegna: 'Micro 5', 'Press Start 2P', 'Courier New', monospace;
+  --ui-sans:  'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ─── Sfondo ──────────────────────────────────────────────── */
+/* Lo sfondo sta su html cosi' copre l'intera area anche quando il
+   contenuto e' piu' corto della finestra, e resta fermo allo scroll. */
+body {
+  background: var(--ui-sky-top);
+  min-height: 100svh;
+  font-family: var(--ui-sans);
+}
+
+/* Lo sfondo e' un livello fisso dietro tutto: copre sempre l'intera
+   finestra, anche quando la pagina e' piu' corta, e non scorre.
+
+   Il castello e' dipinto, non disegnato a pixel: ingrandito con
+   `image-rendering: pixelated` si sgranerebbe, quindi lo scala il browser
+   come una qualsiasi immagine.
+
+   Sta sul livello che porta anche le stelle (`SfondoVivo`) e non su
+   `body::before`: gli aloni che brillano vanno tenuti attaccati al cielo
+   sopra cui brillano. Taglio, centro e immagine sono quelli di sempre. */
+.mo-sfondo {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--ui-sky-top);
+  overflow: hidden;
+}
+
+/* Il cielo: una sfumatura, non un'immagine. Le tappe le calcola
+   `cielo.js` sull'ora di chi guarda e arrivano qui come stile in linea —
+   sono nove colori che cambiano ogni minuto, e in un foglio di stile
+   diventerebbero nove variabili riscritte a mano. */
+.mo-aria {
+  position: absolute;
+  inset: 0;
+}
+
+/* Il paesaggio ritagliato, davanti al cielo. Ce ne sono due alla volta,
+   uno sopra l'altro: sotto la luce da cui si viene, sopra quella verso cui
+   si va. I file stanno in `sfondi.css`, che tiene insieme le dodici —
+   quattro ore per tre formati — invece di spargerle fra i fogli.
+
+   Sta sopra stelle, sole e luna: e' lui che li fa sorgere e tramontare
+   dietro le montagne. */
+.mo-primopiano {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Il velo che tiene leggibili pannelli e testi quando il cielo si
+   schiarisce. L'opacita' la decide l'ora (vedi `cielo.js`): di notte e'
+   zero e il velo non c'e'.
+
+   Sta sopra tutto — cielo, stelle, astri e paesaggio — e sotto la pagina:
+   e' un velo sul quadro intero, non su una sua parte. */
+.mo-velo {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: linear-gradient(180deg, rgba(6, 8, 16, 0.72) 0%, rgba(6, 8, 16, 0.94) 100%);
+}
+
+/* ─── Sole e luna ─────────────────────────────────────────────
+   Stanno in percentuale sulla finestra, non nelle coordinate del disegno:
+   una coppia sola serve tutti e tre i formati.
+
+   Sopra le stelle — la luna e' un corpo, non un velo, e quando passa su una
+   stella la copre — e sotto il paesaggio, che e' il motivo di tutto: cosi'
+   sorgono da dietro una cresta invece di comparire a mezz'aria. */
+.mo-sole,
+.mo-luna {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+/* Il sole e' disegnato qui: una sfera di luce con l'alone attorno. Un file
+   non la renderebbe meglio, e a qualunque misura resta pulita. */
+.mo-sole {
+  width: clamp(34px, 4.4vw, 62px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%,
+    #fffdf2 0%, #ffe9a8 34%, rgba(255, 200, 90, 0.55) 58%, rgba(255, 170, 60, 0) 74%);
+  box-shadow: 0 0 60px 24px rgba(255, 206, 110, 0.28);
+}
+
+.mo-luna {
+  width: clamp(38px, 5vw, 72px);
+  height: auto;
+  /* Il bagliore e' il disegno stesso sfocato: segue il bordo della luna,
+     che non e' un cerchio perfetto, invece di disegnarci attorno un
+     cerchio che non le somiglia. */
+  filter: drop-shadow(0 0 14px rgba(190, 205, 255, 0.55))
+          drop-shadow(0 0 42px rgba(150, 170, 255, 0.30));
+}
+
+.mo-stelle {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+#root {
+  background: transparent;
+  border-inline: 0;
+}
+
+@media (min-width: 481px) {
+  #root { border-inline: 0; }
+}
+
+/* Nessun contenitore ridipinge lo sfondo: lo lascia passare dal livello fisso. */
+.pixel-bg,
+.auth-screen,
+.pixel-profile,
+.page {
+  background: none;
+}
+
+/* ─── Testo ───────────────────────────────────────────────── */
+.pixel-bg, .auth-screen { color: var(--ui-body); }
+
+.pixel-bg p,
+.auth-screen p,
+.pixel-bg .page-desc {
+  color: var(--ui-body);
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  line-height: 1.5;
+}
+
+.pixel-bg a, .auth-screen a { color: var(--ui-link); }
+
+/* ─── Marchio in alto ─────────────────────────────────────── */
+.ui-wordmark {
+  /* Da elemento in linea il riempimento verticale si vedeva ma non spingeva
+     nulla: la scritta finiva incollata al bordo dello schermo, sotto la barra
+     del browser. Come blocco lo spazio in alto esiste davvero, e su un
+     telefono con la tacca ci si aggiunge la zona sicura. */
+  display: inline-block;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-marchio);
+  line-height: 1;
+  color: var(--ui-text);
+  padding: calc(28px + env(safe-area-inset-top, 0px)) 0 14px 18px;
+  letter-spacing: 1px;
+  /* aberrazione cromatica come nei mockup */
+  text-shadow: -2px 0 rgba(255, 0, 200, 0.85), 2px 0 rgba(0, 229, 255, 0.85);
+}
+
+/* ─── Pannelli ────────────────────────────────────────────── */
+.ui-panel,
+.pixel-bg .card,
+.pixel-bg .px-panel,
+.auth-screen .px-panel {
+  background: var(--ui-panel);
+  border: 0;
+  border-radius: var(--ui-radius);
+  padding: 18px;
+  color: var(--ui-body);
+  box-shadow: none;
+}
+
+/* ─── Guida contestuale ───────────────────────────────────── */
+/* Il "?" vive nell'angolo della pillola del titolo: sempre nello stesso
+   posto, abbastanza da essere trovato e abbastanza piccolo da non chiedere
+   attenzione. Il titolo resta centrato perche' la pillola guadagna lo stesso
+   spazio dai due lati, non solo da destra. */
+.ui-title-riga { position: relative; }
+.ui-title-riga .ui-title { padding-inline: 46px; }
+
+.ui-help { position: relative; display: inline-flex; }
+.ui-title-riga .ui-help { position: absolute; top: 14px; right: 24px; }
+
+/* Nelle schermate senza pillola (profilo, menu) il pulsante si appoggia dove
+   serve, ma resta identico a se stesso. */
+.ui-help-ancorata { position: absolute; top: 0; left: 0; }
+.ui-help-riga { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+
+.ui-help-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ui-text);
+  font-family: var(--ui-pixel);
+  font-size: var(--t-s);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity var(--mo-istante), background var(--mo-istante);
+}
+.ui-help-btn:hover, .ui-help-btn:focus-visible { opacity: 1; background: rgba(255, 255, 255, 0.18); }
+.ui-help-btn.is-aperto { opacity: 1; border-color: var(--ui-link); color: var(--ui-link); }
+@media (prefers-reduced-motion: reduce) { .ui-help-btn { transition: none; } }
+
+/* Il pannello scende sotto il pulsante e si tiene dentro lo schermo da solo:
+   ancorato a destra, largo quanto la colonna meno i margini, alto al massimo
+   mezzo schermo e con lo scorrimento suo. */
+.ui-help-pannello {
+  position: absolute;
+  top: calc(100% + 10px);
+  z-index: 65;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 40px));
+  max-height: min(60vh, 460px);
+  overflow-y: auto;
+  padding: 14px 16px;
+  border-radius: var(--ui-radius-tile);
+  background: var(--ui-bar);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  text-align: left;
+}
+/* Il lato lo sceglie il componente guardando dove si trova il pulsante: da
+   qualunque angolo il pannello cade verso il centro dello schermo, mai fuori. */
+.ui-help-pannello.is-destra { right: 0; }
+.ui-help-pannello.is-sinistra { left: 0; }
+
+.ui-help-pannello:focus { outline: none; }
+.ui-help-pannello:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+.ui-help-testa { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ui-help-testa b { font-family: var(--ui-pixel); font-size: var(--t-s); color: var(--ui-text); line-height: 1.5; }
+.ui-help-chiudi {
+  flex: 0 0 auto;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--ui-dim);
+  font-size: var(--t-2xl);
+  line-height: 1;
+  cursor: pointer;
+}
+.ui-help-testo { margin: 10px 0 0; font-size: var(--t-l); line-height: 1.5; color: var(--ui-body); }
+.ui-help-etichetta {
+  margin: 14px 0 0;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  letter-spacing: 1px;
+  color: var(--ui-dim);
+}
+.ui-help-azioni { margin: 8px 0 0; padding-left: 18px; }
+.ui-help-azioni li { margin-top: 5px; font-size: var(--t-l); line-height: 1.45; color: var(--ui-body); }
+.ui-help-consiglio {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--ui-link);
+  border-radius: 0 var(--ui-radius-tile) var(--ui-radius-tile) 0;
+  background: rgba(94, 200, 224, 0.1);
+  font-size: var(--t-l);
+  line-height: 1.5;
+}
+
+/* Titolo dentro la sua pillola, come nei mockup */
+.ui-title {
+  display: block;
+  margin: 0 14px 16px;
+  padding: 16px 18px;
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius);
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xl);
+  line-height: 1.5;
+  color: var(--ui-text);
+  text-align: center;
+  text-shadow: -1.5px 0 rgba(255, 0, 200, 0.7), 1.5px 0 rgba(0, 229, 255, 0.7);
+}
+
+/* ─── Niente scritte appoggiate sullo sfondo ──────────────────
+   Lo sfondo dell'app e' una fotografia con un cielo che cambia ora per ora:
+   una scritta posata li' sopra si legge bene alle sette del mattino e si
+   perde alle sette di sera, e non c'e' colore del testo che regga tutte e
+   quattro le fasi. Percio' ogni cosa scritta sta dentro un vetro nero
+   appena trasparente — che e' anche il modo in cui questa interfaccia dice
+   "questo e' un pezzo di interfaccia" invece di "questo e' un decoro".
+
+   La regola prende solo i figli diretti del corpo della pagina: quello che
+   sta gia' dentro un pannello un vetro ce l'ha, e dandogliene un secondo si
+   vedrebbero due riquadri annidati.
+
+   Il marchio ACHIVIA in cima non passa di qui, ed e' voluto: e' l'insegna
+   dell'applicazione, non un'informazione da leggere, e da telefono un
+   riquadro intorno la trasformerebbe in una casella fra le caselle. */
+
+.pixel-bg .page > p,
+.pixel-bg .page > h2,
+.pixel-bg .page > h3,
+.pixel-bg .page > small,
+.pixel-bg .page > span,
+.pixel-bg .page > ul:not([class]),
+.pixel-bg .app-page > p,
+.pixel-bg .ing-pagina > p,
+.pixel-bg .ui-corpo-pagina > p {
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius-tile);
+  padding: 12px 14px;
+}
+
+/* Il titolo affiancato dal "?" nelle schermate senza pillola: e' un titolo
+   di pagina come gli altri, e sta nel suo vetro come gli altri. */
+.pixel-bg .ui-help-riga {
+  margin: 0 0 var(--space-3);
+  padding: 14px 16px;
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius);
+}
+.pixel-bg .ui-help-riga h1,
+.pixel-bg .ui-help-riga h2 {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-l);
+  line-height: 1.5;
+  color: var(--ui-text);
+}
+
+/* ─── Campi ───────────────────────────────────────────────── */
+.pixel-bg input[type='text'],
+.pixel-bg input[type='email'],
+.pixel-bg input[type='password'],
+.pixel-bg input[type='number'],
+.pixel-bg input[type='date'],
+.pixel-bg select,
+.pixel-bg textarea,
+.auth-screen input,
+.auth-screen select,
+.auth-screen textarea {
+  /* Fondo, cornice e colore del testo stanno in `buttons.css` insieme a
+     quelli dei pulsanti: qui resta come sono impaginati. */
+  padding: 13px 20px;
+  font-family: var(--ui-sans);
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  width: 100%;
+}
+
+.pixel-bg textarea, .auth-screen textarea { border-radius: 18px; }
+
+.pixel-bg input::placeholder,
+.auth-screen input::placeholder { color: #9aa0a6; font-weight: 600; }
+
+.pixel-bg label, .auth-screen label {
+  font-family: var(--ui-sans);
+  font-weight: 700;
+  font-size: var(--t-xl);
+  color: var(--ui-text);
+}
+
+/* ─── Pulsanti a riquadro (tile) ──────────────────────────── */
+.ui-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 0 14px;
+}
+
+.ui-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  position: relative;
+  padding: 14px 8px 12px;
+  min-height: 116px;
+  background: var(--ui-tile);
+  color: var(--ui-text);
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  line-height: 1.6;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  /* Le etichette su due righe usano un a capo nel testo. */
+  white-space: pre-line;
+  transition: transform 0.1s steps(2), background 0.1s;
+}
+
+/* L'etichetta sotto l'icona: quella che nell'insegna dello Shop e' gia'
+   dipinta dentro il disegno.
+
+   Il corpo non e' scelto a occhio. Nell'app il disegno del negozio e' largo
+   56px contro i 136 del file, quindi la scritta che ci sta dentro — alta 21
+   pixel nell'originale — si vede alta 8,6. Micro 5 tiene la maiuscola in
+   0,45 del suo quadrato: 8,6 / 0,45 fa 19px, cioe' 1.2rem. Le lettere che
+   scrive l'app vengono alte esattamente quanto quelle dipinte accanto.
+
+   Il numero e' quasi il doppio di prima perche' il font a pixel usava quasi
+   nove decimi del quadrato: non e' testo piu' grande, e' lo stesso testo
+   misurato con un altro metro. Per la stessa ragione l'altezza di riga
+   scende — a 1.6 le due righe di "Assegna quest" uscirebbero dal riquadro —
+   e la cassa alta con le lettere distanziate e' quella dell'insegna. */
+.ui-tile-label {
+  font-family: var(--ui-insegna);
+  font-size: 1.2rem;
+  line-height: 1.15;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ui-tile:hover, .ui-tile:focus-visible { background: rgba(0, 0, 0, 0.72); transform: translateY(-2px); }
+
+/* L'icona del riquadro e' quasi sempre un disegno; dove non c'e' ancora, e'
+   un vettoriale dell'app. Stessa misura per tutti e due, o il riquadro col
+   vettoriale sarebbe piu' basso degli altri nella stessa fila. */
+.ui-tile img,
+.ui-tile > svg {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+/* L'icona di Achivia's League: il marchio con la coppa appoggiata
+   all'angolo in basso a destra, fuori di un paio di pixel perche' si veda
+   che e' appoggiata sopra e non parte del disegno. */
+.league-icona { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.league-icona img { width: 100%; height: 100%; object-fit: contain; }
+.league-coppa { position: absolute; right: -3px; bottom: -3px; }
+
+/* ─── La classifica fra organizzazioni ────────────────────────────────*/
+
+.lb-filtri { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.lb-filtri .label { flex: 1; min-width: 150px; }
+.lb-attive { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-3) 0; }
+
+/* La classifica scorre per conto suo: si guardano venti righe senza
+   perdere di vista i filtri sopra e la propria posizione sotto. L'altezza
+   e' in unita' di schermo perche' quello che deve restare fuori — i comandi
+   e il riquadro della propria organizzazione — e' sempre lo stesso, sia su
+   un telefono piccolo che su uno grande. */
+.lb-lista {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  max-height: 52vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.lb-riga { border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.lb-riga:first-child { border-top: 0; }
+
+/* La riga della propria organizzazione si riconosce senza cercarla. */
+.lb-riga.is-mia .lb-link { background: rgba(255, 194, 51, 0.08); }
+
+.lb-link {
+  display: grid;
+  grid-template-columns: 28px 48px 34px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 6px;
+  color: var(--ui-text);
+  text-decoration: none;
+}
+.lb-link:hover, .lb-link:focus-visible { background: rgba(255, 255, 255, 0.06); }
+.lb-posto { font-family: var(--ui-pixel); font-size: var(--t-s); color: var(--ui-dim); text-align: right; }
+.lb-premio, .lb-insegna { display: flex; align-items: center; justify-content: center; }
+.lb-nome { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lb-nome b { font-family: var(--ui-pixel); font-size: var(--t-xs); line-height: 1.5; overflow-wrap: anywhere; }
+.lb-nome small { font-size: var(--t-m); color: var(--ui-dim); }
+.lb-valore { font-family: var(--ui-pixel); font-size: var(--t-s); color: var(--ui-gold); }
+
+/* Il riquadro della propria organizzazione, appena sotto la classifica:
+   e' la prima cosa che si cerca in una classifica, e non deve dipendere da
+   quanto si e' disposti a scorrere. */
+.lb-mia { margin-top: var(--space-3); }
+.lb-mia-corpo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  border: 2px solid rgba(255, 194, 51, 0.45);
+  border-radius: var(--ui-radius-tile);
+  background: rgba(255, 194, 51, 0.08);
+  color: var(--ui-text);
+  text-decoration: none;
+}
+.lb-mia-corpo:hover, .lb-mia-corpo:focus-visible { background: rgba(255, 194, 51, 0.14); }
+.lb-mia-premio { flex: 0 0 auto; }
+.lb-mia-testo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.lb-mia-testo small { font-size: var(--t-m); color: var(--ui-gold); }
+.lb-mia-testo b { font-family: var(--ui-pixel); font-size: var(--t-xs); line-height: 1.5; overflow-wrap: anywhere; }
+.lb-mia-riga { font-size: var(--t-m); color: var(--ui-dim); line-height: 1.6; }
+.lb-mia-fuori {
+  margin: 0;
+  padding: 12px 14px;
+  border: 2px dashed rgba(255, 255, 255, 0.18);
+  border-radius: var(--ui-radius-tile);
+  font-size: var(--t-m);
+  color: var(--ui-dim);
+  line-height: 1.7;
+}
+
+/* La medaglia di posizione: quella del podio sta nuda, quella di fascia
+   dentro l'anello inciso col numero. */
+.premio { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.premio img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.premio.is-fascia img {
+  /* Metallo neutro: la medaglia c'e' ma non compete col podio. */
+  width: 72%; height: 72%;
+  filter: grayscale(0.55) brightness(0.95);
+}
+.premio-anello { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.premio-posto {
+  position: absolute; right: -2px; bottom: -2px;
+  padding: 1px 4px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  font-family: var(--ui-pixel); font-size: 0.5rem; color: var(--ui-gold);
+}
+
+/* La vetrina di un'organizzazione. */
+.vetrina-testa { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; }
+.vetrina-nome { font-family: var(--ui-pixel); font-size: var(--t-l); line-height: 1.6; }
+.vetrina-riga { margin: 6px 0 0; font-size: var(--t-m); color: var(--ui-dim); }
+.vetrina-parametro-corpo { display: flex; align-items: center; gap: var(--space-4); margin-top: var(--space-2); }
+.vetrina-parametro-testo { display: flex; flex-direction: column; gap: 4px; }
+.vetrina-valore { font-family: var(--ui-pixel); font-size: var(--t-2xl); color: var(--tv-primary, var(--ui-text)); }
+.vetrina-parametro-testo small { font-size: var(--t-m); color: var(--ui-dim); line-height: 1.6; }
+
+/* ─── Identita': nickname, nome vero, numero Achivia ──────────────────
+   Il nome scelto sta sopra e si legge; quello vero e il numero stanno
+   sotto, piccoli e spenti — ci sono sempre, ma non rubano la riga. */
+.nome-persona { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.nome-alias { display: block; overflow-wrap: anywhere; }
+.nome-vero {
+  font-family: var(--ui-sans);
+  font-size: var(--t-m);
+  font-weight: 400;
+  line-height: 1.3;
+  color: var(--ui-dim);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.nome-persona.is-grande .nome-vero { font-size: var(--t-l); }
+
+/* ─── L'insegna dell'organizzazione ───────────────────────────────────
+   Un logo caricato e uno stemma disegnato devono occupare lo stesso posto
+   e la stessa misura: qui sta la regola che li pareggia. */
+.emblema { display: block; flex: 0 0 auto; }
+.emblema.is-logo { object-fit: contain; image-rendering: auto; }
+
+/* Il marchio dell'app e l'insegna dell'azienda, sulla stessa riga. */
+.ui-marchio-riga { display: inline-flex; align-items: center; gap: 10px; }
+
+/* Col nome dell'area sotto, il marchio smette di essere una riga sola: la
+   scritta e l'insegna restano affiancate in cima, il titolo va a capo. Il
+   riempimento in alto ce l'ha gia' `.ui-wordmark`, che e' il primo figlio:
+   qui non si ripete, o la scritta scenderebbe di trenta pixel. */
+.ui-marchio-riga.con-titolo {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 0;
+}
+
+.ui-marchio-riga.con-titolo .ui-marchio-area { grid-column: 1 / -1; }
+
+/* Non e' un secondo marchio: e' l'etichetta che dice in quale dashboard si
+   e' finiti. Carattere di testo e non quello a pixel, perche' "OSSERVATORIO
+   DEL LAVORO" scritto col carattere dell'insegna non ci sta su un telefono
+   stretto e andrebbe a capo in mezzo a una parola. */
+.ui-marchio-area {
+  padding: 0 0 14px 18px;
+  margin-top: -8px;
+  font-family: var(--ui-sans);
+  font-weight: 700;
+  font-size: var(--t-m);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tv-primary);
+}
+
+/* L'insegna in fondo alla colonna di sinistra: esiste solo da scrivania,
+   dove la barra in basso diventa una colonna e in fondo c'e' spazio. Sul
+   telefono la barra e' larga uno schermo e l'insegna sta gia' in alto,
+   accanto al marchio: qui non ci va. Il resto della regola sta in
+   `desktop.css`. */
+.px-rail-insegna { display: none; }
+
+/* La riga sotto l'avatar, nel profilo dell'admin: e' un pulsante, quindi
+   si comporta come i pannelli cliccabili — si alza appena al passaggio. */
+.emblema-riga {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--ui-radius-tile);
+  background: var(--ui-panel-soft);
+  color: var(--ui-text);
+  text-decoration: none;
+}
+.emblema-riga:hover, .emblema-riga:focus-visible { background: rgba(0, 0, 0, 0.6); }
+.emblema-riga-immagine {
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; flex: 0 0 auto;
+}
+.emblema-riga-testo { display: flex; flex-direction: column; gap: 3px; text-align: left; }
+.emblema-riga-testo b { font-family: var(--ui-pixel); font-size: var(--t-xs); line-height: 1.5; }
+.emblema-riga-testo small { font-size: var(--t-m); color: var(--ui-dim); }
+
+/* La pagina in cui l'insegna si compone. */
+.emblema-anteprima {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-4);
+}
+.emblema-grande { display: flex; align-items: center; justify-content: center; min-height: 124px; }
+.emblema-piccolo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.emblema-piccolo small { width: 100%; font-size: var(--t-m); color: var(--ui-dim); }
+
+.emblema-scelte { display: flex; flex-wrap: wrap; gap: 10px; }
+.emblema-scelta {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  width: 76px; padding: 6px 4px;
+  border: 2px solid transparent; border-radius: var(--ui-radius-tile);
+  background: none; color: var(--ui-dim);
+  font-family: var(--ui-pixel); font-size: var(--t-xs); line-height: 1.4;
+  text-align: center; cursor: pointer;
+}
+.emblema-scelta:hover { color: var(--ui-text); }
+.emblema-scelta.is-scelta { border-color: var(--ui-gold); color: var(--ui-text); }
+
+.emblema-colori { display: flex; flex-wrap: wrap; gap: 10px; }
+.emblema-colore {
+  width: 40px; height: 40px; padding: 0;
+  border: 3px solid rgba(255, 255, 255, 0.2); border-radius: 50%;
+  cursor: pointer;
+}
+.emblema-colore.is-scelta { border-color: var(--ui-gold); transform: scale(1.08); }
+
+/* L'esito di un'operazione riuscita: la controparte verde di `.ui-errore`. */
+.ui-esito {
+  margin: var(--space-3) 0 0;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  line-height: 1.7;
+  color: var(--ui-exp);
+}
+
+/* Il riquadro che porta la faccia scelta invece di un disegno: quello da cui
+   l'admin entra nelle schermate del manager, dove il profilo e' il suo.
+   L'avatar e' un ritratto in verticale — intero dentro un quadrato verrebbe
+   un francobollo in mezzo al riquadro — quindi si ritaglia dall'alto, dove
+   c'e' la faccia, e prende la cornice dei riquadri. */
+.ui-tile-avatar img {
+  object-fit: cover;
+  object-position: top center;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Riquadro "Indietro" fuori dalle griglie: da solo e centrato in fondo alla
+   pagina, della stessa larghezza che avrebbe in una griglia a tre colonne. */
+.ui-back-row {
+  display: flex;
+  justify-content: center;
+  padding: 24px 14px 32px;
+  margin-top: auto;
+}
+.ui-back-row .ui-tile { width: 120px; }
+
+/* Pallino rosso con il conteggio, in alto a destra del riquadro */
+.ui-tile-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  background: var(--ui-alert);
+  color: #fff;
+  border-radius: 999px;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-s);
+}
+
+/* Il pulsante verde con il bordo spesso sotto era il terzo aspetto che un
+   pulsante poteva avere in questa app. Adesso ce n'e' uno solo, in
+   `styles/buttons.css`. */
+
+/* ─── Righe elenco (quest, dipendenti, …) ─────────────────── */
+.pixel-bg .card-row,
+.pixel-bg .menu-item {
+  background: var(--ui-panel);
+  border: 0;
+  border-radius: var(--ui-radius-tile);
+  margin-bottom: 10px;
+  padding: 14px 16px;
+}
+
+.pixel-bg .menu-link {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-s);
+  color: var(--ui-text);
+  text-decoration: none;
+}
+
+/* Le pillole dati chiare sono diventate pannelli di terminale: lo stile di
+   `.ui-stat` vive ora in `terminal.css`, e `.stat-card` non lo usava piu'
+   nessuno da prima. */
+
+/* ─── Barra di navigazione ────────────────────────────────── */
+.px-nav {
+  background: var(--ui-bar);
+  border-top: 0;
+  padding: 0 6px calc(6px + env(safe-area-inset-bottom));
+  gap: 0;
+}
+
+.px-nav-item {
+  /* Il tema precedente rendeva le voci quadrate (aspect-ratio: 1): con poche
+     voci la barra diventava alta quanto e' larga. Qui l'altezza la decide il
+     contenuto. */
+  aspect-ratio: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 2px 10px;
+  background: none;
+  border: 0;
+  color: #ffffff;
+  opacity: 0.75;
+  text-decoration: none;
+}
+
+/* Una voce puo' essere un pulsante invece di un collegamento — l'uscita
+   del negozio. Un <button> si porta dietro il carattere del sistema e il
+   cursore a freccia: qui torna una voce come le altre. */
+button.px-nav-item {
+  font: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Nei mockup la voce attiva non ha sfondo: e' solo piu' luminosa. */
+.px-nav-item.active {
+  opacity: 1;
+  background: none;
+  box-shadow: none;
+  color: #ffffff;
+}
+.px-nav-item:active { transform: none; box-shadow: none; }
+.px-nav-item .px-nav-icon { width: 30px; height: 30px; }
+
+/* Nei mockup le voci non hanno etichetta: parla l'icona. */
+.px-nav-label { display: none; }
+
+/* La voce centrale è il marchio, piu' grande e sempre a piena opacita'. */
+.px-nav-item.brand { opacity: 1; }
+.px-nav-item.brand .px-nav-icon { width: 42px; height: 42px; }
+
+/* ─── Scheda del profilo ──────────────────────────────────── */
+/* Nella schermata 8 nome, ruolo, avatar, crediti e livello stanno dentro un
+   unico pannello scuro, e i sei riquadri sotto restano fuori, appoggiati
+   allo sfondo. */
+.ui-profile-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 18px 16px 22px;
+  border-radius: var(--ui-radius);
+  /* Piu' scuro del pannello comune e con il perimetro segnato: dietro il
+     profilo c'e' il castello, gia' scuro e pieno di dettagli, e un nero al
+     60% senza bordo si legge come una zona d'ombra invece che come un box.
+     Nei mockup lo stacco lo dava la citta' illuminata dietro. */
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+/* ─── XP e crediti ────────────────────────────────────────── */
+/* La barra azzurra e la riga della moneta erano il modo vecchio di dire
+   "a che punto sei": adesso lo dice il pannello STATUS del terminale. */
+
+.ui-exp   { color: var(--ui-exp); font-family: var(--ui-pixel); }
+.ui-gold  { color: var(--ui-gold); font-family: var(--ui-pixel); }
+
+/* ─── Misure che si ripetevano a mano ─────────────────────── */
+/* Erano scritte negli stili in linea, decine di volte: il margine laterale
+   dei blocchi (dodici volte), l'imbottitura del corpo di una pagina (dodici),
+   la colonna di elementi distanziati (undici), il campo di testo col carattere
+   a pixel (cinque). Scritte a mano si disallineano da sole — basta che una
+   riporti 12 invece di 14 — e uno stile in linea vince su qualunque foglio,
+   quindi nessuna media query puo' correggerlo. */
+.ui-blocco { margin: 0 14px; }
+.ui-blocco.con-stacco { margin: 0 14px 16px; }
+
+/* Il profilo pero' i suoi margini li ha gia': e' una colonna con imbottitura
+   e distanza fra i blocchi (una griglia con `gap` sullo schermo largo). Un
+   blocco che si porta dietro anche i 14px suoi rientrava di quel tanto
+   rispetto a quelli sopra e sotto — visibile soprattutto adesso che
+   competenze, achievement e riquadri sono incolonnati uno sull'altro. */
+.pixel-profile > .ui-blocco { margin: 0; }
+.ui-corpo-pagina { padding: 0 var(--space-6) var(--space-6); }
+.ui-corpo-stretto { padding: 0 14px 16px; }
+.ui-colonna { display: flex; flex-direction: column; gap: var(--space-3); }
+.ui-colonna.fitta { gap: var(--space-2); }
+.ui-campo-pixel {
+  width: 100%;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-s);
+  line-height: 1.6;
+}
+
+/* ─── Messaggi d'errore ───────────────────────────────────── */
+/* Erano undici, scritti undici volte negli stili in linea con tre misure
+   diverse e due colori. Una classe sola, e con lei `role="alert"`: cosi' chi
+   usa un lettore di schermo si sente annunciare l'errore quando compare,
+   invece di scoprirlo solo se per caso ci passa sopra. */
+.ui-errore {
+  margin: var(--space-2) 0 0;
+  color: var(--ui-alert-testo);
+  font-size: var(--t-s);
+  line-height: 1.6;
+}
+.ui-errore.is-pagina { padding: 0 14px; }
+
+/* ─── Aree sensibili ──────────────────────────────────────── */
+/* I comandi piccoli restano piccoli: ingrandirli vorrebbe dire ridisegnare
+   le schermate attorno. Ad allargarsi e' solo l'area che risponde al dito,
+   con un riquadro invisibile che li porta ai 44px consigliati sul telefono —
+   il "?" ne misura 26, le × dei pannelli meno di venti. Sul disegno non
+   cambia niente: cambia dove si puo' toccare.
+
+   Le aree si allargano dove c'e' spazio libero, non verso i comandi vicini:
+   le due pillole di conferma crescono solo in altezza, le × solo verso il
+   bordo del pannello. */
+.ui-help-btn,
+.ui-help-chiudi,
+.ach-toast-chiudi,
+.px-icon.bare,
+.profile-skills-link,
+.confirm-pill,
+.cancel-pill { position: relative; }
+
+.ui-help-btn::after,
+.ui-help-chiudi::after,
+.ach-toast-chiudi::after,
+.px-icon.bare::after,
+.profile-skills-link::after,
+.confirm-pill::after,
+.cancel-pill::after {
+  content: '';
+  position: absolute;
+}
+
+/* 26 + 9 + 9 = 44 */
+.ui-help-btn::after { inset: -9px; }
+
+/* Le × stanno nell'angolo: si allargano verso il bordo, non verso il testo
+   che hanno accanto. */
+.ui-help-chiudi::after,
+.ach-toast-chiudi::after { inset: -13px -16px -13px -10px; }
+
+/* L'icona dei messaggi nel profilo: 25px di disegno, nessuna imbottitura. */
+.px-icon.bare::after { inset: -10px; }
+
+/* Un collegamento di testo alto una decina di pixel. */
+.profile-skills-link::after { inset: -15px -8px; }
+
+/* Le pillole sono alte 36: crescono in altezza, cosi' due affiancate non si
+   rubano il tocco a vicenda. */
+.confirm-pill::after,
+.cancel-pill::after { inset: -4px 0; }
+
+/* ─── Accessibilità ───────────────────────────────────────── */
+/* Un anello solo, su tutto quello che si raggiunge da tastiera: prima ce
+   l'avevano sei elementi su una ventina, e chi naviga senza mouse non sapeva
+   dove si trovava. Essendo `:focus-visible`, col mouse non compare mai e
+   niente cambia d'aspetto fuori da questo stato. */
+:is(a, button, input, select, textarea, summary, [tabindex]:not([tabindex='-1'])):focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* I campi erano bianchi e l'azzurro chiaro non ci si vedeva: da quando
+   hanno la cornice scura come i pulsanti, l'anello e' lo stesso di tutti
+   gli altri. */
+
+/* Le caselle di spunta e i radio restano piccoli: l'anello si stacca meno,
+   altrimenti gli sta lontano e non si capisce a quale voce appartenga. */
+:is(input[type='checkbox'], input[type='radio']):focus-visible {
+  outline-color: var(--ui-focus);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-tile { transition: none; }
+}
+
+/* ─── Riquadri degli hub (Management, Quests) ─────────────── */
+/* Le griglie esistenti riusano l'aspetto dei riquadri dei mockup. */
+.pixel-bg .mgmt-grid {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 0 14px;
+}
+
+.pixel-bg .mgmt-tile {
+  aspect-ratio: auto;
+  min-height: 132px;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 10px 14px;
+  background: var(--ui-tile);
+  box-shadow: none;
+  color: var(--ui-text);
+}
+
+.pixel-bg .mgmt-tile:hover { background: rgba(0, 0, 0, 0.72); }
+.pixel-bg .mgmt-tile:active { transform: translateY(2px); box-shadow: none; }
+
+.pixel-bg .mgmt-icon { width: 56px; height: 56px; }
+.pixel-bg .mgmt-label { font-size: var(--t-xs); line-height: 1.6; color: var(--ui-text); }
+
+/* ─── Schermata di accesso ────────────────────────────────── */
+/* Nei mockup il modulo vive dentro un pannello, non appoggiato allo sfondo. */
+.auth-screen .form {
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius);
+  padding: 22px 18px;
+  margin: 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-screen h1 {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-2xl);
+  color: var(--ui-text) !important;
+  text-shadow: -1.5px 0 rgba(255, 0, 200, 0.7), 1.5px 0 rgba(0, 229, 255, 0.7);
+}
+
+.auth-screen .auth-tagline {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  color: var(--ui-dim);
+}
+
+/* Testo e link sotto il modulo: leggibili anche sopra il castello. */
+.auth-screen .hint,
+.auth-screen details {
+  background: var(--ui-panel-soft);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin: 0 6px;
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  color: var(--ui-body);
+}
+
+/* ─── Stato vuoto ─────────────────────────────────────────── */
+.pixel-bg .empty-state {
+  background: var(--ui-panel);
+  border: 0;
+  border-radius: var(--ui-radius-tile);
+  box-shadow: none;
+  color: var(--ui-dim);
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  padding: 18px;
+  text-align: center;
+}
+
+/* Titoli di sezione dentro le pagine (es. "My Quest").
+   Sono di secondo grado perche' il titolo della pagina e' il primo: cambia
+   il grado, non la misura, che resta quella di sempre. La pillola del titolo
+   resta fuori, che ha uno stile suo. */
+.pixel-bg h2:not(.ui-title),
+.pixel-bg h3 {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  color: var(--ui-text);
+  padding: 0 14px;
+  margin-bottom: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Componenti delle schermate 11-20
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Pillole di filtro e schede ──────────────────────────── */
+.ui-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 0 14px 16px;
+}
+
+/* Le pillole dei filtri: come sono fatte lo dice `buttons.css`, qui resta
+   il fatto che si dividono la riga e che sotto una certa larghezza vanno a
+   capo invece di stringersi fino a rendere l'etichetta illeggibile. */
+.ui-chip { flex: 1 1 auto; min-width: 72px; }
+
+
+/* La pillola col calendario: icona e date sulla stessa riga, centrate come
+   il testo delle altre. Il colore lo prende dalla pillola, cosi' l'icona
+   cambia insieme a lei quando e' quella attiva. */
+.ui-chip-cal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ─── Riquadro quest ──────────────────────────────────────── */
+.ui-quest {
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius);
+  padding: 16px 18px;
+  margin: 0 14px 12px;
+}
+
+.ui-quest-head { display: flex; align-items: flex-start; gap: 12px; }
+
+.ui-quest-title {
+  flex: 1;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  line-height: 1.6;
+  color: var(--ui-text);
+}
+
+.ui-expand {
+  background: none;
+  border: 0;
+  color: var(--ui-text);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.ui-quest-by,
+.ui-quest-desc {
+  margin-top: 8px;
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  color: var(--ui-body);
+}
+
+.ui-quest-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.ui-reward {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-s);
+  line-height: 1.7;
+  color: var(--ui-text);
+}
+
+/* La parte di ciascuno su una quest di gruppo: sta accanto alla ricompensa
+   piena, piu' piccola e spenta, perche' e' una precisazione — il numero
+   grosso resta quello che la quest vale. */
+.ui-quest-quota {
+  font-size: var(--t-xs);
+  color: var(--ui-dim);
+}
+
+/* Il timer cambia colore col tempo che resta, come nei mockup. */
+.ui-timer { font-family: var(--ui-pixel); font-size: var(--t-s); }
+.ui-timer.ok   { color: var(--ui-exp); }
+.ui-timer.soon { color: #ff7a45; }
+.ui-timer.late { color: var(--ui-alert-testo); }
+
+.ui-quest-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+
+/* ─── Pulsante largo con icona ────────────────────────────── */
+.ui-action {
+  flex: 1 1 46%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 14px;
+  background: var(--ui-panel);
+  color: var(--ui-text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ui-action:hover { background: rgba(0, 0, 0, 0.72); }
+.ui-action img { width: 30px; height: 30px; image-rendering: pixelated; }
+.ui-action.wide { flex-basis: 100%; }
+
+/* ─── Riga membro ─────────────────────────────────────────── */
+.ui-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius);
+  padding: 14px 18px;
+  margin: 0 14px 12px;
+  text-decoration: none;
+}
+
+.ui-member:hover { background: rgba(0, 0, 0, 0.72); }
+
+/* La riga intera è cliccabile: il testo non va sottolineato come un link. */
+.pixel-bg a.ui-member,
+.pixel-bg a.ui-member:hover { color: inherit; text-decoration: none; }
+.ui-member p { text-decoration: none; }
+
+.ui-member-name {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  line-height: 1.6;
+  color: var(--ui-text);
+}
+
+.ui-member-role {
+  margin-top: 6px;
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  color: var(--ui-body);
+}
+
+.ui-member-avatar {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+/* ─── Intestazione utente ─────────────────────────────────── */
+.ui-userhead {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius);
+  padding: 16px;
+  margin: 0 14px 16px;
+}
+
+.ui-userhead-avatar { width: 76px; height: 76px; object-fit: contain; image-rendering: pixelated; }
+
+.ui-userhead-role {
+  font-family: var(--ui-sans);
+  font-weight: 700;
+  font-size: var(--t-xl);
+  color: var(--ui-text);
+}
+
+.ui-userhead-lvl {
+  margin-top: 6px;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  color: var(--ui-text);
+}
+
+.ui-userhead-counts {
+  list-style: none;
+  text-align: right;
+  font-family: var(--ui-sans);
+  font-weight: 700;
+  font-size: var(--t-xl);
+  color: var(--ui-text);
+  line-height: 1.7;
+}
+
+/* ─── Pannello assistente ─────────────────────────────────── */
+.ui-ai-title {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  color: var(--ui-text);
+  margin-bottom: 14px;
+}
+
+/* Il contatore delle domande, sotto il titolo dell'assistente. Si vede
+   sempre e non solo quando le domande finiscono: un tetto che si scopre nel
+   momento in cui si sbatte contro fa arrabbiare, uno che si vede da subito
+   e' un budget. */
+.ui-ai-conto {
+  margin: -6px 0 14px;
+  font-size: var(--t-m);
+  color: var(--ui-body);
+  line-height: 1.6;
+}
+
+.ui-ai-row { display: flex; align-items: center; gap: 12px; }
+
+/* Cornice e colore glieli da' `buttons.css`: qui resta che non si stringe
+   quando il campo accanto si allarga. */
+.ui-ai-send {
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ui-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Le domande rapide erano pillole bianche piene: adesso sono pulsanti come
+   gli altri (vedi `buttons.css`), e qui resta solo come si dividono la
+   riga. */
+.ui-quick button { flex: 1 1 44%; }
+
+@media (max-width: 380px) {
+  .ui-chip { min-width: 0; }
+}
+
+/* ─── Voti da 1 a 5 della performance review ──────────────── */
+.ui-voti {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+/* I cinque voti: pulsanti compatti in fila, vestiti da `buttons.css` come
+   tutto il resto. Erano pallini bianchi pieni, l'unica cosa chiara della
+   schermata. */
+
+/* ─── Guscio dell'app ─────────────────────────────────────────
+   Questi valori stavano scritti a mano dentro i layout, come attributi
+   `style`. Sono diventati classi perche' uno stile inline vince su
+   qualunque foglio: finche' restavano li', la versione da scrivania non
+   poteva ridisporre niente. Su telefono i valori sono identici a prima. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dove la barra in basso e' fissa va riservato il suo spazio, altrimenti il
+   fondo della pagina le finisce sotto. */
+.app-main.with-rail,
+.app-main.with-nav {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+/* Pagine condivise dal menu: sono loro l'intera schermata, senza barra. */
+.app-page {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Elenco di righe: membri, quest, richieste di aiuto. */
+.ui-list { padding-bottom: var(--space-6); }
+
+/* Griglia di schede: marketplace e acquisti. */
+.ui-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+/* Varianti della griglia di riquadri, prima scritte inline pagina per
+   pagina: un solo pulsante a tutta larghezza, oppure due per riga. */
+.ui-tiles.one { grid-template-columns: 1fr; }
+.ui-tiles.pairs { grid-template-columns: 1fr 1fr; }
+
+/* Anche queste due erano inline sul contenitore del profilo. */
+.pixel-profile {
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ─── Chi entra: la coda di chi amministra ────────────────────
+   La pagina e' una colonna di pannelli del terminale: il linguaggio dei
+   dati, che e' quello che questa app usa quando mostra fatti. Dentro un
+   pannello le righe prendono la sua palette — se restassero sui grigi del
+   tema generale sarebbero due sistemi di colore nella stessa finestra. */
+.ing-pagina {
+  padding: 0 var(--space-4) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ing-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.ing-riga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+.ing-chi { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+/* Il nome di chi bussa e' il dato che conta di questa riga: prende il
+   colore dei valori, non quello delle etichette. */
+.ing-chi b {
+  font-size: var(--t-xl);
+  color: var(--tv-bright);
+  overflow-wrap: break-word;
+}
+.ing-chi small {
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.06em;
+  color: var(--tv-dim);
+}
+.ing-messaggio {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--t-l);
+  color: var(--tv-bright);
+  line-height: 1.6;
+}
+.ing-scelte { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.ing-modulo { display: flex; flex-direction: column; gap: var(--space-2); margin: var(--space-3) 0; }
+.ing-nota { margin: 0; font-size: var(--t-m); color: var(--tv-dim); line-height: 1.6; }
+.ing-nota b { color: var(--tv-primary); letter-spacing: 0.08em; }
+
+/* ─── La pubblicita' ───
+   Il banner in fondo alle schermate e lo spot che si apre a ogni quest
+   assegnata. Ha un vetro suo — piu' spento del pannello di un dato — e
+   un'etichetta in cima che dice sempre che cos'e': una pubblicita' che si
+   confonde con l'applicazione e' una pubblicita' che inganna, e questa
+   nasce dichiarata per scelta. */
+.pub-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: var(--space-4) 14px 0;
+  padding: 12px 14px;
+  border: 1px dashed var(--tv-border);
+  border-radius: var(--ui-radius);
+  background: var(--ui-panel-soft);
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+}
+.pub-etichetta {
+  font-family: var(--tv-font);
+  font-size: var(--t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+.pub-titolo { font-size: var(--t-l); color: var(--ui-text); }
+.pub-testo { margin: 0; font-size: var(--t-m); color: var(--ui-body); line-height: 1.6; }
+.pub-spot { display: flex; flex-direction: column; gap: var(--space-2); text-align: center; }
+.pub-collegamento { color: var(--ui-link); font-size: var(--t-m); }
+
+/* ─── La scelta di dove vanno i crediti ───
+   Due o tre righe con un pallino: e' una domanda a cui bisogna rispondere,
+   non un elenco da leggere. Nessuna e' preselezionata apposta — un
+   interruttore gia' messo e' un interruttore che nessuno legge — e la
+   scheda del pacchetto scelto si vede da lontano. */
+.cred-dove {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border: 0;
+}
+.cred-scelta {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+  cursor: pointer;
+}
+.cred-scelta input { margin-top: 3px; flex: 0 0 auto; }
+.cred-scelta span { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cred-scelta b { font-size: var(--t-l); color: var(--tv-bright); }
+.cred-scelta small {
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.06em;
+  color: var(--tv-dim);
+}
+/* Il pacchetto scelto si distingue dagli altri: senza, il passo dopo
+   comparirebbe senza che si veda a che cosa si riferisce. */
+.cas-scheda.is-scelta { border-color: var(--tv-primary); }
+
+/* ─── Le schede del Castello ───
+   Un piano, un pacchetto, un'organizzazione, un'offerta: sono tutti la
+   stessa cosa a vedersi — un'intestazione con un nome e una riga di
+   contorno, sotto un tabulato di valori, in fondo i comandi. Una regola
+   sola per tutti e quattro, perche' sono la stessa forma e devono restare
+   la stessa forma.
+
+   Il fondo e' la superficie del terminale come per le righe degli ingressi:
+   dentro un pannello si parla la lingua del pannello. */
+.cas-scheda {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  margin-top: var(--space-2);
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+.cas-scheda-testa { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cas-scheda-testa b {
+  font-size: var(--t-xl);
+  color: var(--tv-bright);
+  overflow-wrap: break-word;
+}
+.cas-scheda-testa small {
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.06em;
+  color: var(--tv-dim);
+}
+/* I comandi di una scheda vanno a capo invece di stringersi: tre pulsanti
+   schiacciati su uno schermo di telefono diventano tre bersagli che si
+   sbagliano. */
+.cas-azioni { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-2); }
+
+/* Dentro un pannello del terminale anche le etichette dei campi parlano la
+   sua lingua: erano grigie come nel resto dell'app, e su questo fondo si
+   leggevano male. */
+.tv-panel .label {
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* ─── Le organizzazioni di cui si fa parte ────────────────────
+   Ogni riga e' un pulsante dell'app — cornice, fondo e luce al passaggio
+   vengono da `buttons.css` e non si ridefiniscono qui. Questo blocco mette
+   solo la disposizione: insegna, nome, e la freccia che dice dove porta.
+   Quella gia' aperta si segna in oro, come la propria riga in classifica. */
+
+.sel-org-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Sovrascrive solo quello che un pulsante-riga deve fare diversamente da un
+   pulsante normale: il contenuto va allineato a sinistra e disposto su tre
+   colonne, invece di stare centrato su una riga sola. */
+.ui-btn.sel-org-riga {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 14px;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Le tessere: dove si e' gia' dentro. Quadrate, di vetro, con l'insegna
+   grande in mezzo e il nome sotto; una griglia che si piega da sola e sul
+   telefono resta a due colonne. Il modulo per chiedere o creare
+   un'organizzazione nuova sta in fondo, piatto: sono due cose diverse e
+   si vedono diverse. */
+.sel-org-griglia {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3);
+}
+@media (max-width: 420px) { .sel-org-griglia { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); } }
+.ui-btn.sel-org-tessera {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  aspect-ratio: 1 / 1; min-height: 150px; width: 100%; padding: 14px 10px;
+  text-align: center; text-transform: none; letter-spacing: normal; white-space: normal;
+  background: var(--tv-vetro); border-color: var(--tv-border-forte);
+  box-shadow: inset 0 0 28px rgba(74, 217, 255, 0.06);
+}
+.ui-btn.sel-org-tessera:hover, .ui-btn.sel-org-tessera:focus-visible {
+  background: rgba(74, 217, 255, 0.08);
+  box-shadow: 0 0 18px var(--tv-glow), inset 0 0 28px rgba(74, 217, 255, 0.10);
+}
+.ui-btn.sel-org-tessera .sel-org-nome {
+  font-size: var(--t-l); line-height: 1.25;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ui-btn.sel-org-tessera .sel-org-iniziali { width: 56px; height: 56px; font-size: 1.25rem; }
+.ui-btn.sel-org-tessera.is-aperta {
+  border-color: rgba(255, 194, 51, 0.7);
+  background: rgba(255, 194, 51, 0.08);
+  box-shadow: 0 0 18px rgba(255, 194, 51, 0.22), inset 0 0 28px rgba(255, 194, 51, 0.06);
+}
+.sel-org-dentro { font-family: var(--tv-font); font-size: var(--t-s); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ui-gold); }
+
+/* Quella in cui si e' adesso: si riconosce senza cercarla. */
+.ui-btn.sel-org-riga.is-aperta {
+  border-color: rgba(255, 194, 51, 0.55);
+  background: rgba(255, 194, 51, 0.08);
+}
+.ui-btn.sel-org-riga.is-aperta:hover { background: rgba(255, 194, 51, 0.14); }
+
+.sel-org-insegna { display: flex; align-items: center; justify-content: center; }
+
+/* Le iniziali, per chi un'insegna non se l'e' ancora data. */
+.sel-org-iniziali {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  font-family: var(--tv-font);
+  font-size: var(--t-l);
+  letter-spacing: 0.06em;
+  color: var(--tv-primary);
+}
+
+.sel-org-testo {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  text-align: left;
+}
+
+/* Il nome dell'insegna si legge, quindi non e' scritto nel carattere a
+   pixel e non si spezza a meta' di una parola: va a capo fra le parole,
+   come un nome. Con `anywhere` "Organizzazione" diventava "Organizza-
+   zione", che di un marchio e' il modo peggiore di scriverlo. */
+.sel-org-nome {
+  font-family: var(--ui-sans);
+  font-size: var(--t-xl);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--tv-bright);
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+}
+
+.sel-org-ruolo {
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+.sel-org-entra { font-size: var(--t-2xl); color: var(--tv-primary); line-height: 1; }
+.ui-btn.sel-org-riga:hover .sel-org-entra { color: var(--tv-bright); }
+.ui-btn.sel-org-riga.is-aperta .sel-org-entra { color: var(--ui-gold); }
+
+/* Un invito ricevuto o una richiesta in attesa: non e' un pulsante — non ci
+   si entra premendoci sopra — ma una scheda con le sue scelte in fondo. */
+.sel-org-invito {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+.sel-org-invito-testa { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.sel-org-messaggio {
+  margin: 0;
+  font-size: var(--t-l);
+  color: var(--tv-bright);
+  line-height: 1.6;
+}
+.sel-org-scelte { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+/* Quello che va detto prima di premere, e la conferma dopo. */
+.sel-org-nota {
+  font-size: var(--t-m);
+  color: var(--tv-dim);
+  line-height: 1.6;
+}
+.sel-org-avviso {
+  margin: var(--space-2) 0 0;
+  font-size: var(--t-l);
+  color: var(--ui-exp);
+  line-height: 1.6;
+}
+
+.sel-org-codice { display: flex; flex-direction: column; gap: var(--space-2); }
+.sel-org-codice-riga { display: flex; gap: var(--space-2); align-items: stretch; }
+.sel-org-codice-riga input { flex: 1; min-width: 0; text-transform: uppercase; }
+.sel-org-crea { margin-top: var(--space-3); }
+
+/* ─── Skill Tree ──────────────────────────────────────────────
+   La medaglia e' il pezzo che deve farsi guardare: tutto il resto —
+   rami, barre, righe — resta indietro di un passo. */
+
+.skill-badge {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.skill-badge img,
+.skill-badge svg { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+
+/* Una competenza non ancora ottenuta si vede, ma non si prende la scena. */
+.skill-badge.is-available { opacity: 0.72; }
+/* Revocata: spenta davvero. C'era e non c'e' piu', e si deve vedere. */
+.skill-badge.is-revoked { opacity: 0.38; filter: grayscale(1); }
+
+.skill-badge-level {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--ui-gold);
+  color: #1a1200;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+}
+
+.skill-badge-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  line-height: 0;
+  transition: transform var(--mo-istante) var(--mo-uscita);
+}
+.skill-badge-btn:hover .skill-badge,
+.skill-badge-btn:focus-visible .skill-badge { transform: translateY(-2px) scale(1.04); }
+@media (prefers-reduced-motion: reduce) {
+  .skill-badge-btn, .skill-badge-btn:hover .skill-badge { transition: none; transform: none; }
+}
+
+/* Il riepilogo delle competenze e' un pannello di terminale: percentuale
+   grande, barra a blocchi, righe incolonnate. Sta in `terminal.css`. */
+
+/* ─── Barra di avanzamento di un ramo ───
+   Misure, fondo e taglio a blocchi arrivano da `terminal.css`: qui resta il
+   colore del ramo, che e' l'unica cosa che questa barra ha di suo. */
+.skill-branch-bar { overflow: hidden; }
+.skill-branch-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--ramo, var(--ui-link));
+  transition: width var(--mo-breve) var(--mo-uscita);
+}
+@media (prefers-reduced-motion: reduce) { .skill-branch-bar > span { transition: none; } }
+
+/* ─── La mappa ─── */
+.skill-tree { display: flex; flex-direction: column; gap: 18px; padding: 0 14px 8px; }
+
+.skill-branch {
+  padding: 14px;
+  border-radius: var(--ui-radius);
+  background: rgba(0, 0, 0, 0.55);
+  /* Il ramo si riconosce dalla striscia colorata a sinistra */
+  border-left: 3px solid var(--ramo, var(--ui-link));
+}
+.skill-branch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.skill-branch-head h3 { margin: 0 0 8px; font-size: var(--t-m); }
+.skill-branch-count { font-size: var(--t-s); }
+
+.skill-nodes {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 14px 10px;
+}
+.skill-node { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+.skill-node-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ui-text);
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+}
+.skill-node-level { font-size: var(--t-xs); color: var(--ui-gold); }
+.skill-node-hint { font-size: var(--t-xs); color: var(--ui-dim); line-height: 1.4; }
+
+/* ─── Consigliate ─── */
+.skill-reco { display: flex; flex-direction: column; gap: 8px; }
+.skill-reco-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--ui-radius-tile);
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--ui-text);
+  cursor: pointer;
+  text-align: left;
+}
+.skill-reco-item b { display: block; font-size: var(--t-s); }
+.skill-reco-item small { display: block; margin-top: 3px; font-size: var(--t-xs); color: var(--tv-dim); }
+
+/* ─── Righe del team, catalogo, storico ─── */
+.skill-team-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.skill-team-name {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--ui-text); font-family: var(--ui-pixel); font-size: var(--t-s);
+}
+.skill-team-count { font-size: var(--t-s); }
+.skill-team-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.skill-more {
+  min-width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08); border: 0; color: var(--ui-body);
+  font-family: var(--ui-pixel); font-size: var(--t-xs); cursor: pointer;
+}
+
+.skill-catalog-row { display: flex; gap: 14px; align-items: flex-start; }
+.skill-catalog-body { flex: 1; min-width: 0; }
+.skill-catalog-body b { font-size: var(--t-s); }
+.skill-catalog-body p { margin: 6px 0 8px; font-size: var(--t-l); }
+.skill-catalog-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.skill-history-row { display: flex; gap: 12px; align-items: flex-start; }
+.skill-history-row small { display: block; margin-top: 6px; font-size: var(--t-xs); color: var(--ui-dim); }
+.skill-history-row.is-revoked { opacity: 0.75; }
+.skill-history-reason { margin: 6px 0 0; font-size: var(--t-l); font-style: italic; }
+
+/* ─── Ricerca e filtri: una fascia sola sopra i risultati ─── */
+.skill-filters { padding: 0 14px; margin-bottom: var(--space-4); display: flex; flex-direction: column; gap: 8px; }
+.skill-filters input[type="search"] { width: 100%; }
+.skill-filters-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-filters-row select { flex: 1; min-width: 140px; }
+
+/* ─── Finestre ─── */
+/* Il fondo scuro dietro una finestra. Si chiamava `skill-overlay` perche' e'
+   nato con lo Skill Tree, e intanto tre pagine se n'erano scritto uno loro
+   negli stili in linea, con valori leggermente diversi: opacita' 0,70 invece
+   di 0,72 e un livello piu' in basso. Ora e' uno solo e ha il nome del suo
+   mestiere, non della schermata dove e' nato. */
+.ui-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-5);
+  overflow-y: auto;
+}
+
+/* La finestra vera e propria, in tre misure: quella normale, quella stretta
+   di una conferma e quella larga di una scheda. */
+.ui-dialog { max-width: 460px; width: 100%; max-height: 88vh; overflow-y: auto; }
+.ui-dialog.is-stretta { max-width: 420px; }
+.ui-dialog.is-larga { max-width: 620px; }
+.ui-dialog-head { display: flex; gap: 14px; align-items: center; margin-bottom: var(--space-3); }
+.ui-dialog-head b { font-size: var(--t-m); }
+.ui-dialog-cat { margin: 6px 0 8px; font-size: var(--t-s); color: var(--ui-dim); }
+.ui-dialog-desc { margin: 0 0 var(--space-3); font-size: var(--t-l); }
+.ui-dialog-hint { margin: var(--space-2) 0 0; font-size: var(--t-s); color: var(--ui-dim); line-height: 1.6; }
+.ui-dialog-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-4); }
+
+/* La motivazione e' il cuore del badge: sta in evidenza, non fra i dettagli. */
+.skill-reason {
+  margin: 0 0 var(--space-3);
+  padding: 12px 14px;
+  border-left: 3px solid var(--ui-gold);
+  border-radius: 0 var(--ui-radius-tile) var(--ui-radius-tile) 0;
+  background: rgba(255, 194, 51, 0.08);
+}
+.skill-reason p { margin: 0; font-size: var(--t-l); line-height: 1.6; }
+.skill-reason cite { display: block; margin-top: 8px; font-size: var(--t-xs); color: var(--ui-dim); font-style: normal; }
+
+.skill-assign-preview {
+  display: flex; align-items: center; gap: 12px;
+  margin: var(--space-3) 0;
+  padding: 10px 12px;
+  border-radius: var(--ui-radius-tile);
+  background: rgba(255, 255, 255, 0.05);
+}
+.skill-assign-preview p { margin: 0; font-size: var(--t-m); }
+
+.skill-fieldset { border: 0; padding: 0; margin: var(--space-3) 0; }
+.skill-fieldset legend { padding: 0; font-family: var(--ui-pixel); font-size: var(--t-xs); color: var(--ui-dim); }
+.skill-radio { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: var(--t-m); }
+.skill-prereq-list { max-height: 160px; overflow-y: auto; margin-top: 4px; }
+
+/* ─── Scelta della medaglia (competenze personalizzate) ───
+   Il manager sceglie un disegno, non un nome di file: la griglia mostra le
+   medaglie in bronzo e la riga sopra le mostra nei quattro metalli, cosi' si
+   vede subito che cosa si conquista salendo di livello. */
+.badge-metalli {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: var(--space-3) 0;
+  padding: 10px;
+  border-radius: var(--ui-radius-tile);
+  background: rgba(255, 255, 255, 0.05);
+}
+.badge-metalli figure { margin: 0; text-align: center; }
+.badge-metalli img { width: 100%; max-width: 64px; height: auto; image-rendering: auto; }
+.badge-metalli figcaption {
+  margin-top: 4px;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  /* "Intermediate" a misura leggibile non sta in una colonna su quattro:
+     meglio spezzata che fuori dal riquadro. */
+  overflow-wrap: anywhere;
+  color: var(--ui-dim);
+}
+
+/* La finestra alta poco piu' di duecento pixel andava bene con quarantotto
+   disegni: adesso sono centoventi, e sei righe su venti fanno scorrere alla
+   cieca. Trecento non e' una misura scelta a caso — e' quello che entra
+   sopra la tastiera di un telefono senza spingere fuori i pulsanti. */
+.badge-griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: var(--space-2);
+  padding: 6px;
+  border-radius: var(--ui-radius-tile);
+  background: rgba(0, 0, 0, 0.28);
+}
+.badge-scelta {
+  display: flex; align-items: center; justify-content: center;
+  aspect-ratio: 1;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: var(--ui-radius-tile);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+}
+.badge-scelta img { width: 100%; height: 100%; object-fit: contain; }
+.badge-scelta.is-vuota {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  overflow-wrap: anywhere;
+  color: var(--ui-dim);
+  text-align: center;
+}
+.badge-scelta:hover { background: rgba(255, 255, 255, 0.12); }
+.badge-scelta.is-on {
+  border-color: var(--ui-gold);
+  background: rgba(255, 194, 51, 0.14);
+}
+
+/* Conferma dopo un'assegnazione: si fa vedere e se ne va. */
+.skill-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(104px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 70;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: var(--ui-bar);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--ui-text);
+  font-size: var(--t-s);
+  max-width: calc(100% - 28px);
+  text-align: center;
+}
+
+/* Su schermi larghi la mappa si apre in colonne: i rami stanno uno accanto
+   all'altro e il percorso si legge tutto insieme. */
+@media (min-width: 720px) {
+  .skill-tree { display: grid; grid-template-columns: repeat(2, 1fr); align-items: start; }
+  .skill-catalog-row, .skill-history-row { align-items: center; }
+}
+@media (min-width: 1080px) {
+  .skill-tree { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ─── Competenze nel profilo ───
+   La fascia e' diventata un pannello di terminale: fondo, cornice e piede
+   li mette `terminal.css`. Qui restano le sole cose sue, cioe' come si
+   dispongono le medaglie. */
+.profile-skills { width: 100%; }
+.profile-skills-link { font-size: var(--t-s); color: var(--ui-link); text-decoration: none; }
+.profile-skills-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.profile-skills-badges .skill-more { min-width: 40px; height: 40px; display: grid; place-items: center; text-decoration: none; }
+
+/* Riquadri la cui immagine e' il bottone, scritta compresa: riempiono la
+   cella invece di stare nel formato icona da 56px. L'immagine si adatta al
+   lato che le sta stretto — la larghezza per quelle sdraiate, l'altezza per
+   quelle in piedi come lo Shop — senza deformarsi, e gli 88px di altezza
+   sono quanto entra nel riquadro senza alzare la riga. */
+/* La regola per i riquadri la cui immagine portava dentro anche il nome —
+   il vecchio disegno dello Shop — non serve piu': adesso tutti e sei hanno
+   l'icona sopra e il nome scritto sotto dall'app. */
+
+/* I quattro livelli nella scheda di una competenza: la scala si vede
+   intera, cosi' si legge dove si e' arrivati e quanto manca. */
+.skill-levels { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.skill-level {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-tile);
+  background: rgba(255, 255, 255, 0.04);
+  opacity: 0.62;
+}
+.skill-level.is-done { opacity: 1; background: rgba(255, 194, 51, 0.10); }
+.skill-level.is-current { box-shadow: inset 0 0 0 1px var(--ui-gold); }
+.skill-level-n {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.10);
+  font-family: var(--ui-pixel); font-size: var(--t-xs);
+}
+.skill-level.is-done .skill-level-n { background: var(--ui-gold); color: #1a1200; }
+.skill-level-txt b { display: block; font-size: var(--t-s); }
+.skill-level-txt small { display: block; margin-top: 2px; font-size: var(--t-s); color: var(--ui-dim); line-height: 1.4; }
+
+/* ─────────────────────────────────────────────────────────────
+   Achievements
+
+   Le medaglie vere arriveranno come file: qui non se ne disegna
+   nessuna. Il segnaposto e' un tondo con le iniziali, e si vede
+   che e' un segnaposto — cosi' nessuno lo scambia per la
+   medaglia definitiva.
+   ───────────────────────────────────────────────────────────── */
+
+.ach-badge {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px dashed rgba(255, 255, 255, 0.22);
+  color: var(--ui-dim);
+  opacity: 0.7;
+}
+.ach-badge.is-ottenuto {
+  border-style: solid;
+  border-color: var(--ui-gold);
+  background: rgba(255, 194, 51, 0.14);
+  color: var(--ui-gold);
+  opacity: 1;
+}
+.ach-badge img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+
+/* Con la medaglia vera il tondo tratteggiato e il fondo non servono: la
+   cornice ce l'ha gia' il disegno. Da conquistare si spegne — poco colore e
+   poca luce — invece di sbiadire, cosi' si vede bene quale medaglia e'. */
+.ach-badge.is-immagine { background: none; border: 0; opacity: 1; }
+.ach-badge.is-immagine:not(.is-ottenuto) img { filter: grayscale(0.85) brightness(0.55) contrast(0.9); }
+
+/* Immortal porta la stessa medaglia della Presence Streak — l'orologio nella
+   corona — con addosso una maschera che la fa di smeraldo. Non un disegno
+   nuovo: e' quel traguardo li', portato all'estremo. La rotazione di tinta e'
+   misurata sull'oro della medaglia (37 gradi): 95 in avanti la portano nel
+   verde, e un filo di saturazione le ridanno lo smalto che la rotazione
+   toglie. */
+.ach-badge.is-smeraldo img { filter: hue-rotate(95deg) saturate(1.2); }
+.ach-badge.is-smeraldo:not(.is-ottenuto) img {
+  filter: hue-rotate(95deg) saturate(1.2) grayscale(0.7) brightness(0.6);
+}
+.ach-badge-segnaposto { font-family: var(--ui-pixel); font-size: var(--t-s); letter-spacing: 1px; }
+.ach-badge-volte {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  min-width: 22px;
+  padding: 3px 5px;
+  background: var(--ui-gold);
+  color: #1a1200;
+  font-size: var(--t-xs);
+  text-align: center;
+}
+
+/* Il progresso: la barra e i numeri sono quelli del terminale — la barra a
+   blocchi con dentro il conteggio, e sotto la sola nota. Stanno in
+   `terminal.css`. */
+.ach-progress { margin: 10px 0 0; }
+
+/* La riga di un achievement: medaglia a sinistra, tutto il resto a destra. */
+.ach-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 14px;
+  color: var(--ui-body);
+  text-align: left;
+  font: inherit;
+}
+.ach-card.is-cliccabile { cursor: pointer; }
+.ach-card-testo { flex: 1; min-width: 0; }
+.ach-card-testo > b { display: block; }
+.ach-card-testo > small { display: block; margin-top: 6px; font-size: var(--t-l); line-height: 1.5; }
+.ach-tag-riga { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.ach-crediti { display: block; margin-top: 12px; }
+.ach-crediti input { max-width: 140px; }
+.ach-nota { display: block; margin-top: 6px; font-size: var(--t-s); color: var(--ui-dim); line-height: 1.5; }
+
+/* La sezione nel profilo: una vetrina di medaglie, non un elenco di righe. */
+.ach-vetrina { display: flex; flex-wrap: wrap; gap: 14px; margin-top: var(--space-3); }
+.ach-vetrina-voce {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-wrap: anywhere;
+  gap: 6px;
+  width: 78px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-dim);
+  font-family: var(--ui-pixel);
+  font-size: var(--t-xs);
+  line-height: 1.5;
+  text-align: center;
+  cursor: pointer;
+}
+.ach-vetrina-voce:hover { color: var(--ui-text); }
+
+/* I traguardi dell'organizzazione restano in vetrina anche da conquistare:
+   si deve vedere che cosa si sta per prendere. Spenti, pero', e con scritto
+   sotto a che punto e' — il gradino raggiunto, le volte, o la percentuale
+   che manca. */
+.ach-vetrina-voce.is-spenta { color: rgba(149, 153, 158, 0.7); }
+.ach-vetrina-nota { font-family: var(--ui-pixel); font-size: var(--t-xs); color: var(--ui-gold); }
+.ach-vetrina-voce.is-spenta .ach-vetrina-nota { color: var(--ui-dim); }
+
+.ach-recenti, .ach-classifica, .ach-storico { list-style: none; margin: 0; padding: 0; }
+.ach-recenti li, .ach-storico li {
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ach-recenti li:first-child, .ach-storico li:first-child { border-top: 0; }
+.ach-recenti b, .ach-storico b { display: block; font-family: var(--ui-pixel); font-size: var(--t-xs); color: var(--ui-text); }
+.ach-recenti small, .ach-storico small { display: block; margin-top: 4px; font-size: var(--t-m); color: var(--ui-dim); }
+.ach-storico-testa { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.ach-storico-testa span { font-size: var(--t-m); color: var(--ui-dim); }
+
+/* La motivazione di un'assegnazione manuale: e' il cuore di quel badge. */
+.ach-motivo {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--ui-gold);
+  border-radius: 0 var(--ui-radius-tile) var(--ui-radius-tile) 0;
+  background: rgba(255, 194, 51, 0.08);
+  font-size: var(--t-l);
+  line-height: 1.5;
+}
+
+.ach-classifica li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ach-classifica li:first-child { border-top: 0; }
+.ach-classifica a { text-decoration: none; font-size: var(--t-l); }
+.ach-classifica span { font-family: var(--ui-pixel); font-size: var(--t-s); color: var(--ui-gold); }
+
+/* L'avviso di sblocco: entra da sotto, resta qualche secondo, se ne va. Sta
+   sopra la barra di navigazione, non davanti a quello che si sta facendo. */
+.ach-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(104px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(420px, calc(100vw - 28px));
+  padding: 12px 14px;
+  border-radius: var(--ui-radius-tile);
+  background: var(--ui-bar);
+  border: 1px solid var(--ui-gold);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  animation: ach-entra var(--mo-breve) var(--mo-uscita);
+}
+.ach-toast > div { flex: 1; min-width: 0; }
+.ach-toast b { display: block; font-family: var(--ui-pixel); font-size: var(--t-xs); color: var(--ui-gold); }
+.ach-toast span { display: block; margin-top: 4px; font-family: var(--ui-pixel); font-size: var(--t-s); color: var(--ui-text); }
+.ach-toast small { display: block; margin-top: 4px; font-size: var(--t-m); color: var(--ui-dim); }
+.ach-toast-chiudi {
+  align-self: flex-start;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ui-dim);
+  font-size: var(--t-2xl);
+  line-height: 1;
+  cursor: pointer;
+}
+@keyframes ach-entra {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .ach-toast { animation: none; } }
+
+/* ─────────────────────────────────────────────────────────────
+   Negozio
+
+   La riga del catalogo e quella di un ordine sono la stessa cosa —
+   una figura, quello che c'e' da leggere, quello che si puo' fare —
+   quindi hanno la stessa forma. Su schermo stretto i comandi vanno
+   sotto, larghi quanto la riga: due pulsanti stretti uno accanto
+   all'altro sono due bersagli che si sbagliano.
+   ───────────────────────────────────────────────────────────── */
+
+.negozio-riga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0 14px 12px;
+}
+
+.negozio-figura {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+
+.negozio-corpo {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.negozio-nome {
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  line-height: 1.6;
+  color: var(--ui-text);
+  margin: 0;
+}
+
+.negozio-nota {
+  margin: 8px 0 0;
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  color: var(--ui-body);
+}
+
+.negozio-prezzo {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0 0;
+}
+
+/* Il prezzo di prima sta accanto a quello di adesso, e si vede che e'
+   di prima: piu' piccolo, spento, sbarrato. */
+.negozio-pieno {
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.05em;
+  color: var(--tv-dim);
+}
+
+.negozio-tag {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.negozio-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 100%;
+}
+
+/* Da tablet in su la riga ci sta tutta: i comandi tornano a destra,
+   incolonnati, e la figura si allarga. */
+@media (min-width: 640px) {
+  .negozio-azioni {
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 150px;
+  }
+
+  .negozio-figura { width: 80px; height: 80px; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   La storia, sulla porta d'ingresso
+
+   Un riquadro che deve reggere due mestieri diversi: da telefono e'
+   quello che si legge scendendo verso il modulo, da scrivania sta
+   accanto e non deve rubargli la scena. Percio' non urla: il fondo e'
+   quello dei pannelli dell'app, la cornice e' un filo azzurro come
+   quella dei comandi, e la luce e' appena un alone.
+
+   La compagnia — il fabbro, il mago, il viandante — sta sopra il
+   titolo quando la colonna e' una, e di fianco quando le colonne sono
+   due: sono gli stessi tre avatar, spostati.
+   ───────────────────────────────────────────────────────────── */
+
+.storia {
+  width: 100%;
+  max-width: 460px;
+  padding: 18px 20px;
+  background: var(--ui-panel);
+  border: 1px solid var(--tv-border);
+  border-radius: var(--ui-radius);
+  /* Un alone appena percettibile invece di un'ombra netta: il riquadro
+     si stacca dal cielo senza sembrarci appoggiato sopra. */
+  box-shadow: 0 0 24px rgba(74, 217, 255, 0.06), 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* ── La testata, che apre e chiude ──
+   E' l'unica cosa che si vede a storia chiusa, quindi deve dire due
+   cose insieme: come si chiama, e che sotto c'e' dell'altro. Il
+   triangolino che il browser mette da solo se ne va: al suo posto c'e'
+   una freccia che gira, che e' piu' grande e si vede anche col dito
+   sopra. */
+.storia-testa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  /* Il bersaglio del dito arriva fino ai bordi del riquadro: chi tocca
+     due centimetri a destra del titolo sta comunque toccando il
+     titolo. */
+  margin: -18px -20px;
+  padding: 18px 20px;
+  border-radius: var(--ui-radius);
+}
+
+.storia-testa::-webkit-details-marker { display: none; }
+
+.storia-testa:hover .storia-freccia,
+.storia-testa:focus-visible .storia-freccia { color: var(--tv-bright); }
+
+.storia-testa:focus-visible {
+  outline: 2px solid var(--tv-primary);
+  outline-offset: -4px;
+}
+
+.storia-testa-testo { flex: 1 1 auto; min-width: 0; }
+
+/* Un invito scritto, oltre alla freccia: la freccia dice che si apre a
+   chi conosce le frecce, questo lo dice a tutti gli altri. Aperta la
+   storia non serve piu'. */
+.storia-invito {
+  flex: 0 0 auto;
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.08em;
+  color: var(--tv-dim);
+}
+
+.storia-freccia {
+  flex: 0 0 auto;
+  color: var(--tv-primary);
+  transition: transform var(--mo-breve) var(--mo-uscita), color var(--mo-istante) var(--mo-continuo);
+}
+
+.storia[open] .storia-freccia { transform: rotate(180deg); }
+.storia[open] .storia-invito { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .storia-freccia { transition: none; }
+}
+
+/* Il corpo si stacca dalla testata quando e' aperto, e non esiste
+   quando e' chiuso. */
+.storia[open] .storia-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.storia-compagnia {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.storia-avatar {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  /* Sono disegni a pixel: ingranditi vanno ingranditi a pixel, non
+     sfumati. L'ombra sotto li stacca dal fondo del riquadro. */
+  image-rendering: pixelated;
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.55));
+}
+
+/* Quello in mezzo sta un gradino piu' su: tre figure alla stessa
+   altezza sono una fila, tre a altezze diverse sono un gruppo. */
+.storia-compagnia .storia-avatar:nth-child(2) {
+  width: 62px;
+  height: 62px;
+  margin-bottom: 6px;
+}
+
+.storia-testo { min-width: 0; }
+
+/* L'occhiello sopra il titolo non c'e' piu': il titolo dice gia' dove si e'
+   arrivati, e una riga sopra che lo ripete con altre parole e' una riga in
+   piu' da leggere prima di quella che conta. */
+
+.storia-titolo {
+  display: block;
+  margin: 0;
+  font-family: var(--ui-insegna);
+  font-size: 1.7rem;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  color: var(--ui-text);
+  text-transform: uppercase;
+}
+
+/* Due fili invece di uno: il secondo, piu' corto e piu' spento, e' il
+   modo in cui il terminale dell'app separa le cose senza tirare una
+   riga netta. */
+.storia-riga {
+  margin: 0 0 14px;
+  height: 3px;
+  background:
+    linear-gradient(var(--tv-border-forte), var(--tv-border-forte)) top left / 100% 1px no-repeat,
+    linear-gradient(var(--tv-border), var(--tv-border)) bottom left / 38% 1px no-repeat;
+}
+
+.storia-testo p {
+  margin: 0 0 10px;
+  font-size: var(--t-l);
+  line-height: 1.65;
+}
+
+.storia-testo em { color: var(--tv-bright); font-style: italic; }
+
+.storia-soprattitolo {
+  margin-top: 14px !important;
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tv-primary);
+}
+
+.storia-punti {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Il trattino a sinistra sostituisce il pallino: e' un elenco inciso,
+   non una lista della spesa. */
+.storia-punti li {
+  position: relative;
+  padding-left: 16px;
+  font-size: var(--t-l);
+  line-height: 1.6;
+  color: var(--ui-body);
+}
+
+.storia-punti li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.75em;
+  width: 8px;
+  height: 1px;
+  background: var(--tv-primary);
+}
+
+.storia-punti b { color: var(--ui-text); font-weight: 700; }
+
+/* La riga che introduce il motto gli sta attaccata: fra le due non ci
+   va lo stesso respiro che c'e' fra un paragrafo e l'altro. */
+.storia-attacco { margin-bottom: 2px !important; }
+
+/* Il motto e' una cosa scritta sulle mura, non una frase del racconto:
+   rientra, e ha il suo filo di luce a sinistra. */
+.storia-motto {
+  margin: 8px 0 12px !important;
+  padding: 8px 0 8px 14px;
+  border-left: 2px solid var(--tv-border-forte);
+  color: var(--tv-bright);
+  font-style: italic;
+}
+
+.storia-chiusa {
+  margin-bottom: 0 !important;
+  color: var(--ui-text);
+  font-weight: 700;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Ruoli e permessi
+
+   La riga di un ruolo ha la stessa forma di quella di un articolo del
+   negozio — corpo a sinistra, comandi a destra, tutto a capo su schermo
+   stretto — perche' e' la stessa cosa: qualcosa da leggere e qualcosa da
+   farci.
+
+   I permessi, dentro il modulo, non sono un elenco di venticinque
+   interruttori: sono sei gruppi, e ogni interruttore porta scritto sotto
+   che cosa accende. Un permesso spuntato senza sapere cosa fa e' un
+   problema che si scopre settimane dopo.
+   ───────────────────────────────────────────────────────────── */
+
+.ruolo-riga {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0 14px 12px;
+}
+
+.ruolo-corpo { flex: 1 1 220px; min-width: 0; }
+
+.ruolo-nome {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  line-height: 1.6;
+  color: var(--ui-text);
+}
+
+.ruolo-nota {
+  margin: 8px 0 0;
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  color: var(--ui-body);
+}
+
+.ruolo-gruppo {
+  margin: 0 0 var(--space-3);
+  padding: 10px 12px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--ui-radius);
+}
+
+.ruolo-gruppo legend {
+  padding: 0 6px;
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tv-primary);
+}
+
+.ruolo-permesso {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.ruolo-permesso input {
+  width: auto;
+  margin-top: 3px;
+  flex: 0 0 auto;
+  accent-color: var(--tv-primary);
+}
+
+.ruolo-permesso b {
+  display: block;
+  font-size: var(--t-xl);
+  color: var(--ui-text);
+}
+
+.ruolo-permesso small {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t-l);
+  line-height: 1.5;
+  color: var(--tv-dim);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   La bacheca degli annunci
+
+   La scheda ha la forma di quella delle quest, che e' la forma che in
+   quest'app vuol dire "una cosa alla volta, con dei fatti sotto e dei
+   comandi in fondo". Cambia una cosa sola: i fatti — dove, come si
+   lavora, quanto si offre — stanno su una riga di pastiglie invece che
+   dentro il testo. Sono le quattro cose che si confrontano fra un
+   annuncio e l'altro, e confrontarle dentro un paragrafo vuol dire
+   rileggerlo tutto ogni volta.
+   ───────────────────────────────────────────────────────────── */
+
+.ann-lista { list-style: none; margin: 0; padding: 0; }
+
+.ann-scheda {
+  background: var(--ui-panel);
+  border-radius: var(--ui-radius);
+  padding: 16px 18px;
+  margin: 0 14px 12px;
+  /* Il bordo c'e' sempre, trasparente: quello dell'annuncio in evidenza
+     non deve spostare di due pixel tutto il resto della colonna. */
+  border: 1px solid transparent;
+}
+
+/* Chi ha pagato sta in cima e si vede che sta in cima. Un ordinamento
+   comprato e non dichiarato e' pubblicita' travestita da risultato. */
+.ann-scheda.is-risalto {
+  border-color: var(--ui-gold);
+  background:
+    linear-gradient(rgba(255, 194, 51, 0.06), rgba(255, 194, 51, 0.06)),
+    var(--ui-panel);
+}
+
+.ann-testa { display: flex; align-items: flex-start; gap: 12px; }
+
+.ann-titolo {
+  flex: 1;
+  margin: 0;
+  font-family: var(--ui-pixel);
+  font-size: var(--t-m);
+  line-height: 1.6;
+  color: var(--ui-text);
+}
+
+.ann-org {
+  margin: 8px 0 0;
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  color: var(--ui-body);
+}
+
+.ann-punto { margin: 0 6px; color: var(--tv-dim); }
+
+.ann-fatti {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.ann-fatti li {
+  padding: 3px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.04em;
+  color: var(--ui-body);
+}
+
+/* Chiusa, la descrizione si ferma a quattro righe. Non e' per fare
+   ordine: un annuncio di duemila caratteri aperto per intero rende la
+   bacheca illeggibile, e chi scorre non sta ancora leggendo — sta
+   scegliendo che cosa leggere. */
+.ann-testo {
+  margin: 12px 0 0;
+  font-family: var(--ui-sans);
+  font-weight: 500;
+  font-size: var(--t-xl);
+  line-height: 1.6;
+  color: var(--ui-body);
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+
+.ann-testo.is-aperto {
+  display: block;
+  overflow: visible;
+}
+
+/* Le cinque tendine delle competenze: in colonna su telefono, due o tre
+   per riga quando c'e' spazio. Restano cinque anche vuote — la casella
+   vuota e' quella che dice che se ne puo' mettere un'altra. */
+.ann-competenze { display: grid; gap: var(--space-3); }
+
+@media (min-width: 560px) { .ann-competenze { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 900px) { .ann-competenze { grid-template-columns: repeat(3, 1fr); } }
+
+/* Le competenze chieste da un annuncio. Sono pastiglie come i fatti, ma
+   piene invece che vuote: quelle dicono dove e quanto, queste dicono se
+   l'annuncio ti riguarda, e vanno lette per prime. */
+.ann-competenze-scelte {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.ann-competenze-scelte li {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-l);
+  color: var(--ui-text);
+}
+
+/* L'indirizzo a cui rispondere: compare aprendo l'annuncio, ed e' l'unica
+   cosa cliccabile dentro il testo — percio' si vede che lo e'. */
+.ann-contatto {
+  margin: 12px 0 0;
+  font-family: var(--ui-sans);
+  font-weight: 600;
+  font-size: var(--t-xl);
+  color: var(--ui-body);
+  overflow-wrap: anywhere;
+}
+
+.ann-contatto a {
+  color: var(--ui-gold);
+  text-decoration: underline;
+}
+
+.ann-piede {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.ann-risalto {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ann-problemi { list-style: none; margin: 12px 0 0; padding: 0; }
+
+/* ─── La cassa del negozio ────────────────────────────────────
+   L'istogramma, la classifica di quello che si vende, e la griglia delle
+   spese di spedizione. Nessuna di queste e' una finestra o un comando —
+   sono valori dentro un pannello — e per questo non portano le tacche
+   agli angoli: incorniciare un numero gli darebbe l'aria di una
+   superficie che si preme. */
+
+.shop-istogramma { margin-top: var(--space-3); }
+.shop-istogramma-vuoto { margin: var(--space-3) 0 0; }
+
+.shop-colonne {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; align-items: flex-end; gap: 2px;
+  height: var(--shop-istogramma-h, 132px);
+}
+.shop-colonna {
+  flex: 1 1 0; min-width: 0; height: 100%;
+  display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px;
+  /* la riga di base: un giorno a zero si vede lo stesso, ed e' diverso da
+     un giorno che non c'e' */
+  background: linear-gradient(to top, var(--tv-ghost) 0 1px, transparent 1px);
+}
+.shop-colonna-barra {
+  width: 100%; min-height: 2px;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  background: var(--tv-secondary);
+  transition: height 160ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .shop-colonna-barra { transition: none; } }
+.shop-colonna-spedizioni { flex: 1 1 auto; background: var(--tv-warn); min-height: 0; }
+.shop-colonna-merce { flex: none; background: var(--tv-primary); width: 100%; }
+.shop-colonna.is-vuota .shop-colonna-barra { background: transparent; }
+.shop-colonna-eti {
+  font-size: 0.56rem; letter-spacing: 0.02em; color: var(--tv-dim);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.shop-colonna-eti.is-muta { visibility: hidden; }
+
+.shop-legenda {
+  display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline;
+  margin: var(--space-3) 0 0; font-size: 0.66rem; color: var(--tv-dim);
+}
+.shop-legenda-voce { display: inline-flex; align-items: center; gap: 5px; }
+.shop-quadro { width: 9px; height: 9px; display: inline-block; }
+.shop-quadro.is-merce { background: var(--tv-primary); }
+.shop-quadro.is-spedizioni { background: var(--tv-warn); }
+.shop-legenda-max { margin-left: auto; font-variant-numeric: tabular-nums; }
+
+.shop-classifica { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.shop-classifica-riga {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 6px 8px;
+  border: 1px solid var(--tv-border); border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+.shop-classifica-posto {
+  flex: none; width: 22px; text-align: center;
+  font-family: var(--tv-font); font-size: 0.8rem; font-weight: 700; color: var(--tv-primary);
+  font-variant-numeric: tabular-nums;
+}
+.shop-classifica-figura { flex: none; width: 38px; height: 38px; object-fit: contain; }
+.shop-classifica-nome { flex: 1 1 auto; min-width: 0; font-size: var(--t-l); color: var(--tv-bright); overflow-wrap: break-word; }
+.shop-classifica-conto { flex: none; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25; }
+.shop-classifica-conto b { color: var(--tv-bright); font-variant-numeric: tabular-nums; }
+.shop-classifica-conto small { font-size: 0.62rem; color: var(--tv-dim); white-space: nowrap; }
+
+.shop-spese-griglia {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3); margin-top: var(--space-3);
+}
+
+/* La scelta della destinazione, in vetrina: sta con le pillole delle
+   categorie perche' e' un'altra cosa che si sceglie prima di guardare i
+   prezzi, non alla cassa. */
+.mk-spedizione {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--space-3);
+  margin: var(--space-3) 0 var(--space-4);
+}
+.mk-spedizione-eti {
+  font-family: var(--tv-font); font-size: 0.66rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--tv-dim);
+}
+.mk-spedizione .tv-nota { flex: 1 1 100%; margin: 0; }

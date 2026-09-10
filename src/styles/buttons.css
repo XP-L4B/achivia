@@ -1,0 +1,839 @@
+/* ─────────────────────────────────────────────────────────────
+   Il sistema dei pulsanti.
+
+   Ogni schermata aveva i suoi: il pulsante verde a pixel con l'ombra
+   sotto, la pillola verde chiaro per confermare e quella rosa per
+   annullare, le pillole bianche dei filtri, i riquadri senza cornice.
+   Tre linguaggi diversi nella stessa app, e in Skill Tree — dove
+   "Certifica competenza" e "Crea competenza" stanno una accanto
+   all'altra — due diversi nella stessa riga.
+
+   Il riferimento e' quello dei pannelli dati: fondo quasi nero, cornice
+   di un pixel azzurra, angoli vivi, carattere a larghezza fissa, un velo
+   di luce che si alza quando ci passi sopra. Non e' uno stile nuovo: e'
+   quello che l'app usa gia' per i numeri, esteso a tutto quello su cui
+   si clicca.
+
+   Come e' fatto: le regole stanno qui, una volta sola, e i nomi di
+   classe che le pagine gia' usano (`px-btn`, `confirm-pill`,
+   `cancel-pill`, `ui-chip`...) sono elencati accanto a quelli
+   nuovi negli stessi selettori. Nessuna pagina ha dovuto cambiare per
+   avere il vestito nuovo, e chi scrive codice nuovo usa il componente
+   `Button`, che questi nomi li conosce.
+
+   I disegni dentro ai pulsanti non si toccano: i riquadri tengono la
+   loro illustrazione e la loro etichetta nel carattere dell'insegna.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Le misure del pulsante. L'altezza minima e' quella di un bersaglio
+     che si tocca col dito senza sbagliare. */
+  --btn-alt:        40px;
+  --btn-alt-piccolo: 32px;
+  --btn-pad:        9px 16px;
+  --btn-pad-piccolo: 4px 10px;
+  --btn-gap:        8px;
+  --btn-raggio:     var(--tv-radius);
+  --btn-bordo:      1px;
+
+  /* La cornice a riposo e' piu' accesa di quella dei pannelli: un pannello
+     e' una superficie, un pulsante e' un comando, e il suo contorno deve
+     staccare di almeno tre a uno sia dal suo fondo sia dal pannello dietro
+     — altrimenti non si vede dove finisce la cosa da premere. A 26% come i
+     pannelli si fermava a 1,8; a 45% arriva a 3,2 e 3,0. */
+  --btn-cornice:    rgba(74, 217, 255, 0.45);
+
+  /* Il fondo: quasi nero e semitrasparente, cosi' il pulsante appartiene
+     al pannello su cui sta invece di ritagliarcisi sopra. */
+  --btn-fondo:      rgba(5, 10, 16, 0.72);
+  --btn-fondo-su:   rgba(10, 26, 38, 0.85);
+
+  /* I tempi vengono dal sistema del movimento (`motion.css`): un controllo
+     risponde in un istante, e con una curva sola. */
+  --btn-transizione: border-color var(--mo-istante) var(--mo-continuo),
+                     background   var(--mo-istante) var(--mo-continuo),
+                     color        var(--mo-istante) var(--mo-continuo),
+                     box-shadow   var(--mo-istante) var(--mo-continuo);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   La base
+   Tutto quello che e' un pulsante parte da qui: la forma, il carattere,
+   la cornice. Le varianti cambiano solo il colore della cornice e la
+   luce del testo.
+   ───────────────────────────────────────────────────────────── */
+
+.ui-btn,
+.px-btn,
+.confirm-pill,
+.cancel-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--btn-gap);
+  /* L'altezza la fa il contenuto piu' l'imbottitura: le pillole di prima
+     avevano 36px fissi, e con due righe di etichetta tagliavano il testo. */
+  height: auto;
+  min-height: var(--btn-alt);
+  padding: var(--btn-pad);
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  box-shadow: none;
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+
+/* Al passaggio la cornice si accende e il testo sale di luce. Niente si
+   muove: e' un cambio di luminosita', non un salto. */
+.ui-btn:hover,
+.px-btn:hover,
+.confirm-pill:hover,
+.cancel-pill:hover {
+  background: var(--btn-fondo-su);
+  border-color: var(--tv-border-forte);
+  color: var(--tv-bright);
+  box-shadow: 0 0 10px var(--tv-glow);
+  text-decoration: none;
+}
+
+/* Premuto: un pixel piu' in basso e la cornice piena. La sensazione di
+   pressione la da' lo spostamento minimo, non un'ombra che sprofonda. */
+.ui-btn:active,
+.px-btn:active,
+.confirm-pill:active,
+.cancel-pill:active {
+  transform: translateY(1px);
+  border-color: var(--tv-primary);
+  box-shadow: none;
+}
+
+/* Da tastiera l'anello e' quello dell'app: due sistemi di fuoco nella
+   stessa pagina sarebbero un errore, non uno stile. */
+.ui-btn:focus-visible,
+.px-btn:focus-visible,
+.confirm-pill:focus-visible,
+.cancel-pill:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* Spento: si vede che c'e' e si vede che non si puo'. Resta la forma,
+   se ne va la luce. */
+.ui-btn:disabled,
+.px-btn:disabled,
+.confirm-pill:disabled,
+.cancel-pill:disabled,
+.ui-btn[aria-disabled='true'] {
+  opacity: 0.42;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  background: var(--btn-fondo);
+  border-color: var(--btn-cornice);
+  color: var(--tv-dim);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Le varianti
+   Cambiano il peso della cornice e il colore, mai la forma: si vede che
+   sono lo stesso oggetto con un ruolo diverso.
+   ───────────────────────────────────────────────────────────── */
+
+/* Primaria: l'azione per cui si e' aperta la schermata. Cornice accesa e
+   un velo di colore dentro. */
+.ui-btn.is-primario,
+.px-btn:not(.ghost),
+.confirm-pill {
+  background: rgba(74, 217, 255, 0.10);
+  border-color: var(--tv-border-forte);
+  color: var(--tv-bright);
+}
+
+.ui-btn.is-primario:hover,
+.px-btn:not(.ghost):hover,
+.confirm-pill:hover {
+  background: rgba(74, 217, 255, 0.18);
+  border-color: var(--tv-primary);
+}
+
+/* Secondaria: importante, ma non e' il motivo per cui si e' arrivati
+   qui. E' la base cosi' com'e'. */
+.ui-btn.is-secondario,
+.px-btn.ghost {
+  background: var(--btn-fondo);
+  border-color: var(--btn-cornice);
+  color: var(--tv-primary);
+}
+
+/* Fantasma: azioni di contorno. La cornice compare solo quando serve. */
+.ui-btn.is-fantasma,
+.cancel-pill {
+  background: transparent;
+  border-color: transparent;
+  color: var(--tv-dim);
+}
+
+.ui-btn.is-fantasma:hover,
+.cancel-pill:hover {
+  background: var(--btn-fondo);
+  border-color: var(--btn-cornice);
+  color: var(--tv-bright);
+}
+
+/* Distruttiva: cancellare, revocare, azzerare. Il rosso e' quello che
+   l'app usa gia' per l'allarme. */
+.ui-btn.is-pericolo {
+  border-color: rgba(224, 27, 27, 0.45);
+  color: var(--ui-alert-testo);
+}
+
+.ui-btn.is-pericolo:hover {
+  background: rgba(224, 27, 27, 0.14);
+  border-color: var(--ui-alert-testo);
+  color: var(--ui-alert-testo);
+  box-shadow: 0 0 10px rgba(255, 92, 92, 0.25);
+}
+
+/* Positiva: certificare, approvare. Verde solo dove vuol dire qualcosa —
+   se lo mettessimo su tutti i "salva" smetterebbe di dirlo. */
+.ui-btn.is-successo {
+  border-color: rgba(0, 191, 99, 0.45);
+  color: #57e39b;
+}
+
+.ui-btn.is-successo:hover {
+  background: rgba(0, 191, 99, 0.14);
+  border-color: #57e39b;
+  color: #9df3c6;
+  box-shadow: 0 0 10px rgba(0, 191, 99, 0.25);
+}
+
+/* Solo icona: quadrato, senza testo da distanziare. */
+.ui-btn.is-icona {
+  min-width: var(--btn-alt);
+  padding: 0;
+  gap: 0;
+}
+
+.ui-btn.is-icona.is-compatto {
+  min-width: var(--btn-alt-piccolo);
+}
+
+/* Compatta: dentro una riga, una scheda, una tabella. Piu' bassa e piu'
+   stretta, stessa cornice. */
+.ui-btn.is-compatto {
+  min-height: var(--btn-alt-piccolo);
+  padding: var(--btn-pad-piccolo);
+  font-size: 0.68rem;
+}
+
+/* A tutta larghezza. */
+.ui-btn.is-blocco,
+.px-btn.block {
+  width: 100%;
+}
+
+/* In attesa: il pulsante resta fermo, e accanto all'etichetta lampeggia
+   il cursore del terminale. Nessuna rotellina — non appartiene a questa
+   lingua. */
+.ui-btn.is-caricamento {
+  color: var(--tv-dim);
+  cursor: progress;
+  pointer-events: none;
+}
+
+.ui-btn.is-caricamento::after {
+  content: '';
+  width: 0.5em;
+  height: 1em;
+  background: var(--tv-primary);
+  animation: tv-cursore 1.1s steps(1, end) infinite;
+}
+
+/* ─── Le icone dentro ai pulsanti ───
+   Stessa misura, stesso spazio dal testo, allineate alla riga: una
+   freccia grande il doppio della parola accanto fa sembrare storto il
+   pulsante, non l'icona. */
+.ui-btn svg,
+.px-btn svg,
+.confirm-pill svg,
+.cancel-pill svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  display: block;
+}
+
+.ui-btn.is-compatto svg { width: 14px; height: 14px; }
+
+/* I pulsanti che portano un disegno dell'app dentro — l'icona dipinta,
+   non un vettoriale — la tengono com'e'. */
+.ui-btn img,
+.px-btn img {
+  height: 20px;
+  width: auto;
+  flex: 0 0 auto;
+  image-rendering: pixelated;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Pillole di filtro e schede
+   Sono pulsanti anche loro: prima erano pillole bianche piene, cioe'
+   l'unica cosa chiara di tutta la schermata.
+   ───────────────────────────────────────────────────────────── */
+
+.ui-chip {
+  flex: 1 1 auto;
+  min-width: 72px;
+  padding: 10px;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-dim);
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+
+.ui-chip:hover {
+  border-color: var(--tv-border-forte);
+  color: var(--tv-bright);
+  box-shadow: 0 0 10px var(--tv-glow);
+}
+
+/* La scheda scelta: la stessa lingua della riga scelta nei pannelli dati
+   — cornice accesa, velo di colore, testo alla massima luce. */
+.ui-chip.active {
+  background: rgba(74, 217, 255, 0.14);
+  border-color: var(--tv-primary);
+  color: #fff;
+}
+
+.ui-chip:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* I voti da 1 a 5 della review: cinque pulsanti compatti in fila. */
+.ui-voto {
+  min-width: 38px;
+  min-height: var(--btn-alt);
+  padding: 0;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-dim);
+  font-family: var(--tv-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+
+.ui-voto:hover { border-color: var(--tv-border-forte); color: var(--tv-bright); }
+
+.ui-voto.active {
+  background: rgba(74, 217, 255, 0.14);
+  border-color: var(--tv-primary);
+  color: #fff;
+  text-shadow: 0 0 8px var(--tv-glow);
+}
+
+.ui-voto:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+/* ─────────────────────────────────────────────────────────────
+   Superfici su cui si clicca
+   Riquadri, righe di elenco, voci di menu: non sono pulsanti con
+   un'etichetta, ma si toccano, e devono rispondere allo stesso modo.
+   ───────────────────────────────────────────────────────────── */
+
+/* I riquadri della home tengono disegno ed etichetta: prendono solo la
+   cornice e la risposta al tocco. */
+.ui-tile {
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  transition: var(--btn-transizione), transform 0.1s steps(2);
+}
+
+.ui-tile:hover,
+.ui-tile:focus-visible {
+  border-color: var(--tv-border-forte);
+  box-shadow: 0 0 12px var(--tv-glow);
+}
+
+.ui-tile:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.ui-tile:active { transform: translateY(1px); border-color: var(--tv-primary); }
+
+/* I riquadri di Gestione: stessa famiglia dei riquadri della home, stessa
+   cornice. Erano rimasti indietro perche' hanno un nome di classe loro. */
+.pixel-bg .mgmt-tile {
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  transition: var(--btn-transizione);
+}
+
+.pixel-bg .mgmt-tile:hover,
+.pixel-bg .mgmt-tile:focus-visible {
+  border-color: var(--tv-border-forte);
+  box-shadow: 0 0 12px var(--tv-glow);
+}
+
+.pixel-bg .mgmt-tile:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+/* Il pulsante che manda la domanda all'assistente: sola icona, nessuna
+   etichetta. Prende la cornice degli altri pulsanti di sola icona. */
+.ui-ai-send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--btn-alt);
+  min-height: var(--btn-alt);
+  padding: 0;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-primary);
+  transition: var(--btn-transizione);
+}
+
+.ui-ai-send:hover {
+  background: var(--btn-fondo-su);
+  border-color: var(--tv-border-forte);
+  color: var(--tv-bright);
+  box-shadow: 0 0 10px var(--tv-glow);
+}
+
+.ui-ai-send:active { transform: translateY(1px); }
+.ui-ai-send:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.ui-ai-send svg { width: 22px; height: 22px; }
+
+/* Righe di elenco e voci di menu. */
+.pixel-bg .ui-member,
+.pixel-bg .card-row,
+.pixel-bg .menu-item {
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  transition: var(--btn-transizione);
+}
+
+.pixel-bg a.ui-member:hover,
+.pixel-bg .card-row:hover,
+.pixel-bg .menu-item:hover {
+  border-color: var(--tv-border-forte);
+  box-shadow: 0 0 10px var(--tv-glow);
+}
+
+.pixel-bg a.ui-member:focus-visible,
+.pixel-bg .menu-item:focus-visible {
+  outline: 2px solid var(--ui-focus);
+  outline-offset: 2px;
+}
+
+/* Il pulsante largo con l'icona (Accetta, Chiedi aiuto...): tiene la sua
+   forma, prende la cornice. */
+.ui-action {
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  font-family: var(--tv-font);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: var(--btn-transizione);
+}
+
+.ui-action:hover {
+  border-color: var(--tv-border-forte);
+  color: var(--tv-bright);
+  box-shadow: 0 0 10px var(--tv-glow);
+}
+
+.ui-action:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+
+/* ─── Pulsanti di sola icona ───
+   L'icona sovrapposta a un avatar o a un titolo non prende cornice: li'
+   la cornice coprirebbe il disegno sotto. Prende la luce. */
+.px-icon {
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  background: var(--btn-fondo);
+  box-shadow: none;
+  color: var(--tv-primary);
+  transition: var(--btn-transizione);
+}
+
+.px-icon:hover {
+  background: var(--btn-fondo-su);
+  border-color: var(--tv-border-forte);
+  color: var(--tv-bright);
+  box-shadow: 0 0 10px var(--tv-glow);
+}
+
+.px-icon:active { transform: translateY(1px); box-shadow: none; }
+
+.px-icon.bare {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ui-text);
+}
+
+.px-icon.bare:hover {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--tv-primary);
+}
+
+/* Le due azioni in fondo al menu stanno dentro una riga di elenco, che la
+   cornice ce l'ha gia': si allineano a sinistra come le voci sopra e non
+   ne disegnano una seconda dentro la prima. */
+.menu-azione,
+.menu-azione:hover {
+  justify-content: flex-start;
+  text-align: left;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* I collegamenti che fanno da azione ("Vedi tutti", "Skill Tree"): non
+   sono pulsanti, ma rispondono come loro. */
+.profile-skills-link,
+.skill-more {
+  font-family: var(--tv-font);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tv-primary);
+  transition: var(--btn-transizione);
+}
+
+.profile-skills-link:hover,
+.skill-more:hover {
+  color: var(--tv-bright);
+  text-decoration: none;
+  text-shadow: 0 0 8px var(--tv-glow);
+}
+
+.skill-more {
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  background: var(--btn-fondo);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   I campi
+   Un modulo e' fatto di cose su cui si clicca quanto una barra di
+   pulsanti. Erano pillole bianche a tutta larghezza: l'unica superficie
+   chiara di schermate altrimenti scure, e la sola forma tonda rimasta.
+
+   Prendono la cornice degli altri, non il carattere: quello che si
+   scrive dentro resta nel carattere di lettura e a sedici pixel, che e'
+   la misura sotto la quale iOS ingrandisce la pagina da solo appena
+   tocchi un campo.
+   ───────────────────────────────────────────────────────────── */
+
+.pixel-bg input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.pixel-bg select,
+.pixel-bg textarea,
+.auth-screen input:not([type='checkbox']):not([type='radio']):not([type='range']),
+.auth-screen select,
+.auth-screen textarea {
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-bright);
+  transition: var(--btn-transizione);
+}
+
+.pixel-bg input:hover,
+.pixel-bg select:hover,
+.pixel-bg textarea:hover,
+.auth-screen input:hover,
+.auth-screen select:hover,
+.auth-screen textarea:hover {
+  border-color: var(--tv-border-forte);
+}
+
+.pixel-bg input:focus,
+.pixel-bg select:focus,
+.pixel-bg textarea:focus,
+.auth-screen input:focus,
+.auth-screen select:focus,
+.auth-screen textarea:focus {
+  border-color: var(--tv-primary);
+  box-shadow: 0 0 10px var(--tv-glow);
+}
+
+.pixel-bg ::placeholder,
+.auth-screen ::placeholder { color: var(--tv-dim); }
+
+/* ── I comandi brevi della musica ──
+   Sulla schermata d'accesso: una pillola sola con dentro la nota e la
+   manopola. Prende il fondo e la cornice degli altri comandi, cosi' si
+   stacca dal cielo dipinto e si vede che e' una cosa su cui si agisce —
+   ma resta piccola e in disparte, perche' chi entra sta guardando i
+   campi, non la musica. */
+.musica-breve {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: var(--space-5);
+  padding: 7px 14px;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: 999px;
+  transition: var(--btn-transizione);
+}
+
+.musica-breve:hover,
+.musica-breve:focus-within { border-color: var(--tv-border-forte); }
+
+.musica-breve .ui-volume {
+  max-width: 120px;
+}
+
+/* Da telefono resta la sola nota: accesa o spenta.
+
+   Una manopola larga quattro centimetri su una schermata dove si entra e
+   basta e' una cosa in piu' da schivare col dito, e chi vuole la musica
+   piu' bassa la puo' abbassare da fuori, con i tasti che ha in mano.
+   Chi la vuole precisa la trova nelle impostazioni, dentro l'app. */
+@media (max-width: 1023px) {
+  .musica-breve .ui-volume { display: none; }
+
+  /* Senza la manopola la pillola si stringe attorno alla nota, se no
+     resterebbe una capsula mezza vuota. */
+  .musica-breve {
+    gap: 0;
+    padding: 5px;
+  }
+}
+
+/* La nota dentro la pillola non e' un secondo pulsante incorniciato: la
+   cornice ce l'ha gia' la pillola, e due cornici una dentro l'altra
+   sono una cosa che si guarda invece di una che si usa. Il bersaglio
+   del dito resta grande anche se il disegno e' piccolo. */
+.musica-breve-tasto {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: -4px 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--tv-primary);
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+
+.musica-breve-tasto[aria-pressed='false'] { color: var(--tv-dim); }
+
+.musica-breve-tasto:hover { color: var(--tv-bright); }
+
+.musica-breve-tasto:focus-visible {
+  outline: 2px solid var(--tv-primary);
+  outline-offset: 2px;
+}
+
+/* ── Il pulsante dentro il campo "scegli file" ──
+   Il campo prende la cornice degli altri, ma dentro il browser ci
+   disegna un pulsante suo, grigio di sistema: qui parla la lingua
+   degli altri comandi. */
+.pixel-bg input[type='file']::file-selector-button,
+.auth-screen input[type='file']::file-selector-button {
+  margin-right: 10px;
+  padding: 6px 12px;
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  background: var(--btn-fondo);
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+
+.pixel-bg input[type='file']::file-selector-button:hover,
+.auth-screen input[type='file']::file-selector-button:hover {
+  border-color: var(--tv-border-forte);
+  background: var(--btn-fondo-su);
+  color: var(--tv-bright);
+}
+
+/* ── Il cursore del volume ──
+   Non e' un campo da riempire, e' una manopola: prende i colori degli
+   altri comandi ma la forma di una barra del terminale — una guida
+   sottile e una presa che si accende sotto il dito. Il browser la
+   disegna con due pseudo-elementi diversi, uno per famiglia, e non
+   accettano di stare nella stessa regola: quello che sembra un doppione
+   qui sotto non lo e'. */
+.ui-volume {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  max-width: 190px;
+  height: 22px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  /* Col dito, un trascinamento orizzontale che parte da qui e' della
+     manopola; la pagina resta libera di scorrere in verticale. Senza
+     questa riga il gesto puo' finire allo scorrimento, e la manopola
+     non si muove. */
+  touch-action: pan-y;
+}
+
+.ui-volume::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--tv-track);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+}
+
+.ui-volume::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--tv-track);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+}
+
+.ui-volume::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--tv-primary);
+  border: 0;
+  box-shadow: 0 0 8px var(--tv-glow);
+  transition: var(--btn-transizione);
+}
+
+.ui-volume::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tv-primary);
+  border: 0;
+  box-shadow: 0 0 8px var(--tv-glow);
+  transition: var(--btn-transizione);
+}
+
+.ui-volume:hover::-webkit-slider-thumb,
+.ui-volume:focus-visible::-webkit-slider-thumb { background: var(--tv-bright); }
+
+.ui-volume:hover::-moz-range-thumb,
+.ui-volume:focus-visible::-moz-range-thumb { background: var(--tv-bright); }
+
+.ui-volume:focus-visible {
+  outline: 2px solid var(--tv-primary);
+  outline-offset: 4px;
+}
+
+.ui-volume:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* Il calendario e la freccia del menu a tendina sono disegnati dal
+   browser in nero: su fondo scuro sparirebbero. */
+.pixel-bg input[type='date'],
+.auth-screen input[type='date'] { color-scheme: dark; }
+
+/* ─────────────────────────────────────────────────────────────
+   Larghezze
+   Su schermo stretto due pulsanti affiancati devono poter andare a capo
+   invece di stringersi fino a tagliare l'etichetta.
+   ───────────────────────────────────────────────────────────── */
+
+.ui-dialog-actions,
+.ui-quest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (max-width: 380px) {
+  .ui-btn,
+  .px-btn,
+  .confirm-pill,
+  .cancel-pill {
+    font-size: 0.7rem;
+    padding: 8px 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .ui-btn,
+  .px-btn,
+  .confirm-pill,
+  .cancel-pill {
+    font-size: 0.78rem;
+  }
+
+  .ui-chip { font-size: 0.72rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Accessibilita'
+   ───────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-btn,
+  .ui-chip,
+  .ui-voto,
+  .ui-tile,
+  .ui-action,
+  .px-icon,
+  .px-btn,
+  .confirm-pill,
+  .cancel-pill { transition: none; }
+
+  .ui-btn:active,
+  .ui-tile:active,
+  .px-icon:active,
+  .px-btn:active { transform: none; }
+
+  .ui-btn.is-caricamento::after { animation: none; opacity: 1; }
+}
+
+@media (prefers-contrast: more) {
+  .ui-btn,
+  .ui-chip,
+  .ui-voto,
+  .ui-tile,
+  .ui-action,
+  .px-icon,
+  .px-btn,
+  .confirm-pill,
+  .cancel-pill {
+    border-color: var(--tv-primary);
+    box-shadow: none;
+  }
+
+  .ui-btn.is-fantasma,
+  .cancel-pill { border-color: var(--tv-dim); }
+}

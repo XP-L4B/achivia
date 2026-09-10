@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Achivia App — Specifica Funzionale Strutturata
+  Fonte: XP-L4B "Achivia App – Documento di Analisi Funzionale v.1.0" + deck commerciale ACHIVIA
+  Lingua: IT/EN (multilingua dal primo rilascio)
+  Note: questo XML è una rappresentazione machine-readable dell'analisi funzionale,
+        con una sezione dedicata alle interazioni grafiche tra bottoni (navigation graph).
+-->
+<achivia_app version="1.0" project_code="XP-L4B" tagline="enhance &amp; engage">
+
+  <!-- =========================================================
+       1. OVERVIEW / CONCEPT
+  ========================================================== -->
+  <overview>
+    <name etymology="achievement" ipa="/əˈtʃiːvm(ə)nt/">Achivia</name>
+    <definition>Una cosa realizzata con successo grazie a impegno, abilità o coraggio.</definition>
+    <purpose>
+      Permettere a un Manager di monitorare in modo oggettivo i task (Quest) eseguiti dai
+      Dipendenti tramite logiche di gaming. Completare una Quest assegna punti esperienza
+      (XP, fa salire di livello l'avatar) e crediti spendibili nel Marketplace dedicato.
+    </purpose>
+    <paradigm>monitoraggio attività → premialità → raccolta dati utili al mercato del lavoro → marketplace</paradigm>
+    <platforms>
+      <platform store="Google Play Store">Android</platform>
+      <platform store="App Store">iOS</platform>
+    </platforms>
+    <languages from_first_release="true">
+      <language>Italiano</language>
+      <language>Inglese</language>
+    </languages>
+    <distribution_models>
+      <model id="lite" cost="free" verified_company="no" max_employees="3">
+        <feature>Servizio gratuito con funzionalità limitate</feature>
+        <feature>Accesso limitato a dati e performance</feature>
+        <feature>Personalizzazione marketplace limitata</feature>
+        <feature>Presenza di banner pubblicitari</feature>
+        <note>Il documento funzionale cita un limite di 5 utenti (versione gratuita);
+              il deck commerciale cita 3 account dipendenti. Da riconciliare.</note>
+      </model>
+      <model id="corporate" cost="subscription" verified_company="from_25_employees" max_employees="unlimited">
+        <feature>Servizio in abbonamento con tutte le funzioni</feature>
+        <feature>Accesso a dati di performance e analytics dei lavoratori</feature>
+        <feature>Personalizzazione completa del marketplace</feature>
+        <feature>Azienda verificata dai 25 dipendenti in su</feature>
+        <feature>Partecipazione a eventi dal vivo e online</feature>
+        <feature>Rimozione banner pubblicitari</feature>
+        <upgrade_path in_app="true">Upgrade "Passa a Premium" eseguibile direttamente nell'app</upgrade_path>
+      </model>
+    </distribution_models>
+    <base_features_v1>
+      <feature>Gestione Utenti</feature>
+      <feature>Gestione Quest</feature>
+      <feature>Raccolta dati relativi alle performance degli Utenti</feature>
+      <feature>Marketplace (vetrina oggetti + processo di acquisto)</feature>
+      <feature>Personalizzazione avatar ad alto livello (sesso / colore pelle / vestiario limitato)</feature>
+      <feature>Messaggistica DM interna</feature>
+    </base_features_v1>
+    <ai_assistant note="presente nel deck commerciale">
+      Assistente AI ("Achivia AI Assistant") per migliorare la performance generale e le competenze
+      dei collaboratori. Quick requests: "Overall performance", "Profile development". Campo "Ask about &lt;nome&gt;".
+    </ai_assistant>
+    <market_database note="dal deck">
+      Accesso al database dei lavoratori sul mercato (matching/recruiting basato su dati di performance).
+    </market_database>
+  </overview>
+
+  <!-- =========================================================
+       2. AUTH: REGISTRAZIONE E LOGIN
+  ========================================================== -->
+  <authentication>
+    <registration>
+      <field required="true" type="email">Indirizzo email (usato anche come username)</field>
+      <field required="true" type="password">Password desiderata</field>
+      <field required="true" type="password">Conferma password</field>
+      <organization_choice>
+        <option id="create_new">Crea una nuova Organizzazione</option>
+        <option id="join_existing">Accedi a una Organizzazione già esistente (tramite codice/invito DM)</option>
+      </organization_choice>
+      <create_organization>
+        <type id="company" label="Azienda">
+          <field required="true">Nome Azienda</field>
+          <field required="true">Indirizzo</field>
+          <field required="true">P.IVA o C.F.</field>
+          <generated_field id="codice_azienda" readonly="true">
+            Codice Azienda visualizzato dall'app, da comunicare a chi vuole entrare nell'organizzazione
+          </generated_field>
+        </type>
+        <type id="private" label="Privato">
+          <field required="true">Nome organizzazione (es. "Famiglia Rossi")</field>
+          <generated_field id="codice" readonly="true">
+            Codice visualizzato dall'app, da comunicare a chi vuole entrare
+          </generated_field>
+        </type>
+        <result>Alla conferma dati viene creato l'Utente Admin</result>
+      </create_organization>
+    </registration>
+    <login>
+      <credential>username = email</credential>
+      <credential>password</credential>
+      <lockout failed_attempts="5">
+        Dopo 5 tentativi errati l'utenza viene bloccata. Sblocco tramite tasto dedicato,
+        durante il quale si sceglie una nuova password.
+      </lockout>
+    </login>
+    <default_role>
+      Ogni nuovo utente registrato è categorizzato come Dipendente; l'Admin assegna poi le grant
+      che identificano il livello aziendale (vale anche per organizzazioni non aziendali, es. famiglia).
+    </default_role>
+  </authentication>
+
+  <!-- =========================================================
+       3. RUOLI UTENTE
+  ========================================================== -->
+  <roles>
+    <role id="admin" typical_owner="Responsabile HR / General Manager">
+      <capability>Modifica grant degli utenti registrati</capability>
+      <capability>Acquisto crediti messi in palio nelle Quest</capability>
+      <capability>Impostazioni ad alto livello</capability>
+    </role>
+    <role id="manager">
+      <capability>Assegna Quest e ne monitora l'avanzamento</capability>
+      <note>Può essere contemporaneamente Manager e Dipendente (riceve Quest da livelli superiori)</note>
+    </role>
+    <role id="employee" id_alt="dipendente">
+      <capability>Riceve e completa le Quest assegnate per guadagnare XP e crediti</capability>
+    </role>
+  </roles>
+
+  <!-- =========================================================
+       4. UTENTE ADMIN
+  ========================================================== -->
+  <admin_module home="dashboard con tasti">
+    <function id="user_list_management" label="Gestione lista Utenti">
+      <subfunction id="edit_delete_users">
+        <view>Tabella utenti registrati con livello</view>
+        <action>Reset password</action>
+        <action>Cancellazione utente dal sistema</action>
+      </subfunction>
+      <subfunction id="grant_assignment">
+        Assegnazione livelli di grant per ricreare l'organigramma aziendale: un Manager vede e
+        gestisce solo i Dipendenti della propria divisione.
+      </subfunction>
+    </function>
+    <function id="admin_settings" label="Impostazioni admin">
+      <subfunction id="buy_credits">
+        Acquisto crediti con transazione reale ("portafoglio dei crediti"): textbox numero crediti
+        + tasto Acquista → servizio di pagamento (da definire).
+      </subfunction>
+      <subfunction id="countdown_toggle">
+        Visualizzazione conto alla rovescia (hh:mm:ss) accanto alla scadenza di una Quest.
+      </subfunction>
+      <subfunction id="go_premium">
+        "Passa a Premium": gestione utenti illimitata (vs 5 nella free) + rimozione banner pubblicitari.
+      </subfunction>
+      <subfunction id="upload_logo">
+        Upload logo aziendale (carica / visiona / elimina una JPG).
+      </subfunction>
+      <subfunction id="brand_marketplace" depends_on="upload_logo" availability="paid_only">
+        "Brandizza Marketplace": attivo solo se il logo è stato caricato.
+      </subfunction>
+    </function>
+    <function id="analyze_data" label="Analizza dati">
+      Stesse statistiche dell'Utente Manager, calcolate sull'intera popolazione registrata
+      per l'azienda/gruppo gestito (vedi data_module).
+    </function>
+  </admin_module>
+
+  <!-- =========================================================
+       5. UTENTE MANAGER
+  ========================================================== -->
+  <manager_module>
+    <tabs>
+      <tab id="profile" label="Profile (Home)"/>
+      <tab id="management" label="Management"/>
+      <tab id="data" label="Data"/>
+      <tab id="notifications" label="Notifications"/>
+      <tab id="menu" label="Menu"/>
+    </tabs>
+
+    <tab_detail id="profile">
+      <dashboard_item>Nome e Cognome utente</dashboard_item>
+      <dashboard_item>Nome del Team di appartenenza (es. "Bank&amp;Insurance prototypes")</dashboard_item>
+      <dashboard_item action="open_messaging">
+        Icona piccione viaggiatore con letterina: badge rosso = n° DM non letti → pagina messaggistica
+      </dashboard_item>
+      <dashboard_item>Avatar</dashboard_item>
+      <dashboard_item>Barra a riempimento del livello raggiunto</dashboard_item>
+      <dashboard_item>Icona Livello attuale</dashboard_item>
+      <dashboard_item>Icona Punti esperienza accumulati</dashboard_item>
+      <dashboard_item>Icona Crediti disponibili</dashboard_item>
+      <dashboard_item action="open_marketplace">Link al Marketplace</dashboard_item>
+      <avatar_customization trigger="tasto Personalizza accanto all'avatar">
+        <option>Sesso</option>
+        <option>Colore della pelle</option>
+        <option_group name="Vestiario">
+          <option>Copricapo</option>
+          <option>Top</option>
+          <option>Bottom</option>
+          <option>Scarpe</option>
+          <option>Arma (da impugnare)</option>
+        </option_group>
+      </avatar_customization>
+    </tab_detail>
+
+    <tab_detail id="management">
+      <function id="employees">
+        <list_view>Tabella Dipendenti del team: Nome, Cognome, Email</list_view>
+        <search_filters>
+          <filter>Nome e cognome</filter>
+          <filter>Team di appartenenza</filter>
+          <filter>Livello raggiunto</filter>
+        </search_filters>
+        <employee_detail>
+          <section id="overview">
+            <kpi>Numero Quest totali assegnate</kpi>
+            <kpi>Numero Quest completate</kpi>
+            <kpi>Numero Quest pending</kpi>
+            <kpi>Percentuale completamento Quest assegnate</kpi>
+            <kpi>Numero Quest scadute</kpi>
+            <personal_info>
+              <field>Email</field>
+              <field>Dipartimento</field>
+              <field>Livello attuale</field>
+              <field>Punti esperienza accumulati</field>
+              <field>Crediti disponibili</field>
+            </personal_info>
+          </section>
+          <section id="quests">Tabella Quest assegnate (In corso / Scadute)</section>
+          <section id="teams">Team di appartenenza del Dipendente</section>
+          <section id="analytics">Analytics del Dipendente</section>
+          <side_action id="send_message">
+            Icona chat → popup messaggio → recapitato come email all'indirizzo di registrazione
+          </side_action>
+        </employee_detail>
+      </function>
+
+      <function id="quests" label="Quests">
+        <section id="my_quest">
+          Quest assegnate al Manager stesso. Riquadro per Quest:
+          <field>Titolo</field>
+          <field>Stato: approvata / rifiutata</field>
+          <field>XP in palio</field>
+          <field>Crediti in palio</field>
+        </section>
+        <subpage id="new_quest" label="Nuova Quest">
+          <field required="true">Nome Quest</field>
+          <field required="true">Descrizione</field>
+          <field required="false" type="datetime">Data di scadenza con orario (opzionale; non obbligatoria se "Salva come modello")</field>
+          <field type="enum" name="Tipologia">
+            <value id="principale">Principale</value>
+            <value id="side">Side Quest (presa in carico volontariamente dal Dipendente)</value>
+            <value id="istanza">Istanza / Quest di gruppo (collaborativa, a gruppo o più persone)</value>
+          </field>
+          <field>Ricompensa XP al completamento</field>
+          <field>Ricompensa crediti al completamento (anche "0 crediti")</field>
+          <field>Note</field>
+          <field type="checkbox" name="Salva come modello"/>
+          <field type="dropdown" name="Assegna a" mandatory="false">
+            Dipendente o Team (se Team → Quest abilitata per tutti i componenti)
+          </field>
+          <save_logic>
+            <case condition="nessun assegnatario">
+              <action id="usa_come_template">Va in "Quest Salvate", modificabile in seguito</action>
+              <action id="salva">Diventa Side Quest, presa in carico dal Dipendente via sezione Help</action>
+            </case>
+            <case condition="assegnata a dipendente/gruppo">
+              <action id="salva">Quest attiva → il Dipendente deve confermare o rifiutare (con motivo)</action>
+            </case>
+          </save_logic>
+          <on_complete>Dipendente segna risolta → notifica → Quest va in "Approvazione Quest"</on_complete>
+        </subpage>
+        <subpage id="expiring_quests" label="Quest in scadenza">
+          <scope>Quest in scadenza entro 48h + già scadute</scope>
+          <columns>Titolo, Tipologia, Descrizione, Data scadenza, Assegnatario, XP, Crediti</columns>
+          <filters>Tutte, Scadute, In scadenza, Tipologia, Assegnatario</filters>
+          <action>Messaggio all'assegnatario per verificare impedimenti</action>
+        </subpage>
+        <subpage id="active_quests" label="Quest attive">
+          <columns>Titolo, Tipologia, Descrizione, XP, Crediti, Data creazione, Data scadenza, Assegnatario</columns>
+          <action id="close_early">Chiusura Quest in anticipo, senza completamento</action>
+          <filters>Scadenza (mese), Assegnatario, Tipologia</filters>
+        </subpage>
+        <subpage id="approve_quests" label="Approvazione Quest">
+          <scope>Quest contrassegnate come completate dal Dipendente, in stato "Da Approvare"</scope>
+          <action id="confirm">
+            Conferma → popup "sei sicuro?" → Quest chiusa → XP e crediti assegnati al Dipendente
+          </action>
+          <action id="reject">
+            Rifiuto → Quest resta attiva → Manager deve modificare la scadenza,
+            poi può modificare parametri, riassegnare o chiudere anzitempo
+          </action>
+        </subpage>
+        <subpage id="saved_quests" label="Quest salvate">
+          <scope>Quest non ancora assegnate (template)</scope>
+          <action id="use_template">
+            Apre creazione Quest precompilata tranne "Assegna a"; il template resta riutilizzabile
+            fino a cancellazione esplicita (icona cancella)
+          </action>
+        </subpage>
+      </function>
+
+      <function id="help_requests" label="Help Request / Team Support">
+        <scope>Tutte le Quest per cui un Dipendente ha richiesto aiuto</scope>
+        <interaction>Selezione Quest → popup con testo della richiesta</interaction>
+        <filters>Team di appartenenza, Assegnatario, Titolo Quest</filters>
+      </function>
+
+      <function id="projects" label="Projects">
+        <action id="new_project" label="New Project">
+          <field>Nome progetto</field>
+          <field>Descrizione progetto</field>
+          <field>Data inizio / fine</field>
+          <field>Assegnazione Dipendenti (ricerca per nome; ammessi anche dipendenti di altre divisioni, accettazione offline)</field>
+          <effect>Le Quest assegnate al team diventano Istanze</effect>
+        </action>
+        <view id="existing_projects">Tabella progetti attivi (nome, data fine) → Quest del team</view>
+        <view id="closed_projects">Tabella progetti chiusi (nome, data inizio/fine) → Quest passate del team</view>
+      </function>
+    </tab_detail>
+
+    <tab_detail id="data" label="Data">
+      <macro_area id="performance">
+        <indicator>Numero Quest portate a termine in tempo</indicator>
+        <indicator>Percentuale sul totale</indicator>
+        <indicator>Numero di volte che ho fornito aiuto</indicator>
+        <indicator>Numero di volte che ho richiesto aiuto</indicator>
+        <indicator>Numero di volte che ho fallito la Quest</indicator>
+        <indicator>Percentuale Quest fallite sul totale</indicator>
+        <indicator>Numero e percentuale Quest completate in ritardo</indicator>
+        <indicator>Assenze medie nel periodo</indicator>
+        <indicator>Giorni di presenza consecutivi</indicator>
+      </macro_area>
+      <macro_area id="credits">
+        <indicator>Totale crediti guadagnati</indicator>
+        <indicator>Totale crediti spesi</indicator>
+        <indicator>Totale crediti guadagnati tramite collaborazione</indicator>
+      </macro_area>
+      <feature id="compare">Confronto dati Dipendenti/team con diagrammi sovrapponibili</feature>
+      <feature id="assign_badge">
+        Assegnazione badge al Dipendente (icona scelta tra disponibili) visualizzato "attaccato" all'avatar
+      </feature>
+    </tab_detail>
+
+    <tab_detail id="notifications" label="Notifications">
+      <grouping>Appartenenza, Management, Personali</grouping>
+      <notification type="deadline_alert">Alert di deadline chiusura Quest</notification>
+      <notification type="approval_request">Richiesta di conferma Quest contrassegnate come completate</notification>
+    </tab_detail>
+
+    <tab_detail id="menu" label="Menu">
+      <item id="marketplace">Link al Marketplace</item>
+      <item id="help">Contenuti statici + contatti email (Direzione / report bug)</item>
+      <item id="faq">FAQ in testo statico</item>
+      <item id="settings">
+        <setting type="toggle">Attiva notifiche</setting>
+        <setting type="toggle">Dark Mode</setting>
+        <setting type="action">Cambia Password</setting>
+        <setting type="action" wave="2">Export data: download Excel (Quest in corso/passate, livello, crediti)</setting>
+        <setting type="action" id="delete_account">
+          Sempre disponibile. Popup conferma → secondo popup "Sei stato rimosso dall'Organizzazione,
+          vuoi che altre Organizzazioni ti possano trovare?":
+          <on_yes>Account mantenuto ma non associato ad alcuna organizzazione</on_yes>
+          <on_no>Account anonimizzato (rimossi nome/cognome, identificato solo da id);
+                 le performance restano sul DB per calcoli di divisione/organizzazione</on_no>
+        </setting>
+      </item>
+      <item id="about">About Achivia (storia e concept)</item>
+      <item id="terms">Termini di servizio</item>
+      <item id="privacy">Privacy Policy</item>
+      <item id="logout">Logout</item>
+    </tab_detail>
+  </manager_module>
+
+  <!-- =========================================================
+       6. UTENTE DIPENDENTE
+  ========================================================== -->
+  <employee_module>
+    <tabs>
+      <tab id="profile" label="Profile (Home)"/>
+      <tab id="my_quests" label="My Quests"/>
+      <tab id="analytics" label="Analytics"/>
+      <tab id="help" label="Help"/>
+      <tab id="menu" label="Menu"/>
+    </tabs>
+
+    <tab_detail id="profile">
+      <note>Stessa dashboard del Manager; l'icona messaggi porta alla sezione Help</note>
+      <avatar_customization>
+        <option>Sesso</option><option>Colore della pelle</option>
+        <option_group name="Vestiario">
+          <option>Copricapo</option><option>Top</option><option>Bottom</option>
+          <option>Scarpe</option><option>Arma</option>
+        </option_group>
+      </avatar_customization>
+    </tab_detail>
+
+    <tab_detail id="my_quests">
+      <quest_card>
+        <field>Titolo</field>
+        <field>Descrizione</field>
+        <field>Stato: accettata/rifiutata (dall'utente) e approvata/non approvata (dal Manager)</field>
+        <field>XP in palio</field>
+        <field>Crediti in palio</field>
+      </quest_card>
+      <action id="accept_reject">
+        Accetta Quest, oppure Rifiuta → popup obbligatorio con motivazione scritta
+      </action>
+      <action id="request_help">
+        Popup: descrizione aiuto richiesto + crediti offerti (inferiori al totale in palio) + opzionale utente destinatario.
+        <if_user_selected>Messaggio all'utente → visibile in Help &gt; "Le mie conversazioni"</if_user_selected>
+        <if_no_user>Salvato in Help &gt; "Bacheca Team"</if_no_user>
+        <ownership>La Quest resta in carico al richiedente; solo lui può segnalarla completata</ownership>
+        <helper_confirmation>
+          Se il Manager conferma il completamento, popup "il collega mi ha effettivamente aiutato?"
+        </helper_confirmation>
+      </action>
+      <action id="mark_complete">
+        Comunica completamento → notifica al Manager (verifica offline)
+      </action>
+    </tab_detail>
+
+    <tab_detail id="analytics">
+      <note>Stessi indicatori del Data Manager, ma sulle proprie attività</note>
+      <macro_area id="credits_extra">
+        <indicator>Crediti attuali (oltre a guadagnati/spesi/collaborazione)</indicator>
+      </macro_area>
+      <feature id="compare">Confronto propri dati vs team con diagrammi sovrapponibili</feature>
+    </tab_detail>
+
+    <tab_detail id="help">
+      <area id="bacheca_team" label="Bacheca Team">
+        Richieste di aiuto ricevute + Side Quest non assegnate, prendibili in carico con tasto "Accetta"
+      </area>
+      <area id="le_mie_conversazioni" label="Le mie conversazioni">
+        Richieste di aiuto inviate ad altri utenti
+      </area>
+    </tab_detail>
+
+    <tab_detail id="menu">
+      <note>Identico al Menu del Manager (Marketplace, Aiuto, FAQ, Impostazioni, About, Termini, Privacy, Logout)</note>
+    </tab_detail>
+  </employee_module>
+
+  <!-- =========================================================
+       7. MARKETPLACE
+  ========================================================== -->
+  <marketplace>
+    <scope>Crediti guadagnati spendibili nel Marketplace dell'Organizzazione</scope>
+    <branding depends_on="admin_logo_upload">Articoli brandizzabili col logo aziendale</branding>
+    <fulfillment>Oggetti spediti alla sede dell'Organizzazione e smistati agli utenti richiedenti</fulfillment>
+    <product_card>
+      <field>Immagine</field><field>Breve descrizione</field><field>Valore in crediti</field>
+    </product_card>
+    <purchase_flow>
+      Acquista → popup conferma → decurta crediti → acquisto registrato → visibile in "I miei acquisti"
+    </purchase_flow>
+    <info_section id="info_crediti">Contenuti statici: come accumulare e spendere crediti</info_section>
+    <backoffice access="admin_only" platform="web">
+      Inserimento prodotti, descrizioni, immagini e valore crediti tramite backoffice web dedicato
+    </backoffice>
+  </marketplace>
+
+  <!-- =========================================================
+       8. APRI PUNTI / OPEN QUESTIONS
+  ========================================================== -->
+  <open_questions>
+    <item>Limite utenti versione free: 5 (doc funzionale) vs 3 (deck). Da riconciliare.</item>
+    <item>Servizio di pagamento per acquisto crediti: da definire.</item>
+    <item>Quali funzionalità incluse nel tier gratuito: da definire.</item>
+    <item>Export data: pianificato per wave 2.</item>
+    <item>AI Assistant e database lavoratori: presenti nel deck, non dettagliati nel doc funzionale v1.0.</item>
+  </open_questions>
+
+</achivia_app>

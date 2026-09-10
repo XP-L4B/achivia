@@ -1,0 +1,49 @@
+/* ═══════════════════════════════════════════════════════════════
+   SFONDI — il paesaggio ritagliato, nelle quattro ore e nei tre formati
+
+   Il cielo non sta qui: lo disegna `SfondoVivo` come sfumatura, e cambia
+   colore di minuto in minuto. Qui c'e' quello che gli sta davanti —
+   castello, borghi e montagne, col cielo trasparente — e un posto solo
+   dove sta scritto quale file va con quale ora e con quale schermo.
+
+   I tre formati non sono tre ritagli automatici:
+
+     quadro     1080x1080, per tablet e telefoni girati di lato
+     telefono    810x1080, lo stesso quadro gia' ritagliato al centro,
+                 cosi' il telefono non scarica la larghezza che non
+                 vedrebbe mai
+     scrivania  1920x1080, un disegno suo: il castello e' piu' lontano,
+                 ci sono i borghi ai lati e molto piu' cielo
+
+   Sono WebP e non PNG. Il disegno sembra pixel art ma non lo e': ha
+   centosettantamila colori, con sfumature vere sulle montagne. Ridurne la
+   tavolozza per alleggerire il PNG costava piu' errore di quanto ne costi
+   il WebP a qualita' novanta, e pesava il triplo. L'alfa passa intatta, che
+   e' l'unica cosa che qui non puo' permettersi di sbagliare.
+
+   Il browser scarica solo quello che serve davvero: le due ore in corso,
+   nel formato del suo schermo. Le altre dieci restano dove sono.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Il quadro: tablet, e telefono girato di lato. */
+.mo-primopiano.fase-alba { background-image: url('../assets/ui/primopiano-alba.webp'); }
+.mo-primopiano.fase-giorno { background-image: url('../assets/ui/primopiano-giorno.webp'); }
+.mo-primopiano.fase-tramonto { background-image: url('../assets/ui/primopiano-tramonto.webp'); }
+.mo-primopiano.fase-notte { background-image: url('../assets/ui/primopiano-notte.webp'); }
+
+/* Il telefono in verticale: lo stesso quadro, gia' ritagliato al centro. */
+@media (orientation: portrait) and (max-width: 1023px) {
+  .mo-primopiano.fase-alba { background-image: url('../assets/ui/primopiano-alba-mobile.webp'); }
+  .mo-primopiano.fase-giorno { background-image: url('../assets/ui/primopiano-giorno-mobile.webp'); }
+  .mo-primopiano.fase-tramonto { background-image: url('../assets/ui/primopiano-tramonto-mobile.webp'); }
+  .mo-primopiano.fase-notte { background-image: url('../assets/ui/primopiano-notte-mobile.webp'); }
+}
+
+/* Da scrivania, il disegno in sedici noni. La soglia e' quella di
+   `desktop.css` e di `useScrivania`: le tre devono restare d'accordo. */
+@media (min-width: 1024px) {
+  .mo-primopiano.fase-alba { background-image: url('../assets/ui/primopiano-alba-desktop.webp'); }
+  .mo-primopiano.fase-giorno { background-image: url('../assets/ui/primopiano-giorno-desktop.webp'); }
+  .mo-primopiano.fase-tramonto { background-image: url('../assets/ui/primopiano-tramonto-desktop.webp'); }
+  .mo-primopiano.fase-notte { background-image: url('../assets/ui/primopiano-notte-desktop.webp'); }
+}

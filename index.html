@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Achivia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Barlow:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600;700&family=Micro+5&display=swap" rel="stylesheet" />
+    <script>
+      // Ripristina il path dopo il redirect da 404.html
+      (function () {
+        var p = window.location.search.match(/[?&]p=\/([^&]*)/);
+        if (p) {
+          var q = window.location.search.match(/[?&]q=([^&]*)/);
+          window.history.replaceState(
+            null, null,
+            window.location.pathname.replace(/\/$/, '') +
+            '/' + p[1].replace(/~and~/g, '&') +
+            (q ? '?' + q[1].replace(/~and~/g, '&') : '') +
+            window.location.hash
+          );
+        }
+      })();
+    </script>
+    <script>
+      // Rete di sicurezza contro la pagina bianca dopo una pubblicazione.
+      //
+      // GitHub Pages tiene l'index.html in cache per qualche minuto, mentre lo
+      // script e il foglio di stile portano l'impronta del contenuto nel nome e
+      // vengono sostituiti a ogni pubblicazione. Un telefono che torna sull'app
+      // dentro quella finestra chiede due file che non esistono piu': niente
+      // stile e niente app, cioe' una pagina bianca, finche' la cache non
+      // scade da sola.
+      //
+      // Qui l'app si accorge di non essere arrivata e ricarica una volta sola,
+      // con un parametro che la cache non ha mai visto.
+      (function () {
+        var CHIAVE = 'achivia:ricarica';
+        function nonEArrivata() {
+          var root = document.getElementById('root');
+          var tema = getComputedStyle(document.documentElement).getPropertyValue('--ui-panel');
+          return !root || root.childElementCount === 0 || !tema.trim();
+        }
+        window.addEventListener('load', function () {
+          // Un istante di respiro: il primo disegno di React non e' immediato.
+          setTimeout(function () {
+            try {
+              if (!nonEArrivata()) { sessionStorage.removeItem(CHIAVE); return; }
+              // Una volta sola: se ricaricare non basta, il problema e' un altro
+              // e un ciclo infinito lo nasconderebbe.
+              if (sessionStorage.getItem(CHIAVE)) return;
+              sessionStorage.setItem(CHIAVE, '1');
+            } catch (e) {
+              return;
+            }
+            var l = window.location;
+            l.replace(l.pathname + (l.search ? l.search + '&' : '?') + 'v=' + Date.now() + l.hash);
+          }, 1500);
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

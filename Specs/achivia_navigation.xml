@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Achivia — Navigation & Interaction Graph
+  Descrive ogni schermata come <screen>, ogni bottone/azione come <button>,
+  con l'attributo target = id della schermata di destinazione e trigger/effetti.
+  Tipologie di transizione: navigate (cambio pagina), modal (popup),
+  toggle (stato on/off), action (effetto senza cambio pagina), external (web/backoffice).
+-->
+<navigation_graph app="Achivia">
+
+  <!-- ============ FLUSSO DI INGRESSO (comune) ============ -->
+  <flow id="onboarding">
+    <screen id="splash" entry="true">
+      <button label="Apertura app" type="navigate" target="auth_choice"/>
+    </screen>
+
+    <screen id="auth_choice" title="Login / Registrazione">
+      <button label="Crea una nuova Organizzazione" type="navigate" target="reg_form_new"/>
+      <button label="Accedi a Organizzazione esistente" type="navigate" target="reg_form_join"/>
+      <button label="Login (email + password)" type="action" target="role_router">
+        <effect>Verifica credenziali</effect>
+        <error attempts="5" type="modal" target="account_locked"/>
+      </button>
+    </screen>
+
+    <screen id="account_locked" kind="modal">
+      <button label="Avvia sblocco" type="navigate" target="reset_password"/>
+    </screen>
+    <screen id="reset_password" title="Nuova password">
+      <button label="Conferma" type="navigate" target="auth_choice"/>
+    </screen>
+
+    <screen id="reg_form_new" title="Dati registrazione">
+      <field>email</field><field>password</field><field>conferma password</field>
+      <button label="Avanti" type="navigate" target="org_type_choice"/>
+    </screen>
+    <screen id="org_type_choice" title="Tipo Organizzazione">
+      <button label="Azienda" type="navigate" target="org_form_company"/>
+      <button label="Privato" type="navigate" target="org_form_private"/>
+    </screen>
+    <screen id="org_form_company" title="Dati Aziendali">
+      <button label="Conferma dati" type="action" target="role_router">
+        <effect>Genera Codice Azienda + crea Utente Admin</effect>
+      </button>
+    </screen>
+    <screen id="org_form_private" title="Dati Organizzazione privata">
+      <button label="Conferma dati" type="action" target="role_router">
+        <effect>Genera Codice + crea Utente Admin</effect>
+      </button>
+    </screen>
+    <screen id="reg_form_join" title="Accesso a Org. esistente">
+      <button label="Inserisci Codice / Invito DM" type="action" target="role_router">
+        <effect>Crea utente con ruolo default = Dipendente</effect>
+      </button>
+    </screen>
+
+    <router id="role_router" note="Smista in base alle grant assegnate">
+      <route grant="admin" target="admin_home"/>
+      <route grant="manager" target="mgr_profile"/>
+      <route grant="employee" target="emp_profile"/>
+    </router>
+  </flow>
+
+  <!-- ============ ADMIN ============ -->
+  <flow id="admin">
+    <screen id="admin_home" title="Admin Dashboard">
+      <button label="Gestione lista Utenti" type="navigate" target="admin_users"/>
+      <button label="Impostazioni admin" type="navigate" target="admin_settings"/>
+      <button label="Analizza dati" type="navigate" target="data_screen" shared="manager"/>
+    </screen>
+    <screen id="admin_users" title="Lista Utenti (tabella)">
+      <button label="Reset password" type="action"/>
+      <button label="Cancella utente" type="modal" target="confirm_delete"/>
+      <button label="Assegna grant (organigramma)" type="action"/>
+    </screen>
+    <screen id="admin_settings" title="Impostazioni admin">
+      <button label="Acquisto crediti" type="navigate" target="buy_credits"/>
+      <button label="Toggle countdown Quest" type="toggle"/>
+      <button label="Passa a Premium" type="action"><effect>Utenti illimitati + rimuove banner</effect></button>
+      <button label="Upload logo (JPG)" type="action" id="logo_upload"/>
+      <button label="Brandizza Marketplace" type="action" enabled_if="logo_upload"/>
+    </screen>
+    <screen id="buy_credits" title="Acquisto crediti">
+      <button label="Acquista" type="external" target="payment_service">
+        <effect>Transazione reale → portafoglio crediti</effect>
+      </button>
+    </screen>
+  </flow>
+
+  <!-- ============ MANAGER ============ -->
+  <flow id="manager">
+    <tabbar role="manager">
+      <tab label="Profile" target="mgr_profile"/>
+      <tab label="Management" target="mgr_management"/>
+      <tab label="Data" target="data_screen"/>
+      <tab label="Notifications" target="mgr_notifications"/>
+      <tab label="Menu" target="menu_screen"/>
+    </tabbar>
+
+    <screen id="mgr_profile" title="Profile / Home">
+      <button label="Icona piccione (DM)" type="navigate" target="messaging" badge="unread_dm"/>
+      <button label="Personalizza avatar" type="modal" target="avatar_editor"/>
+      <button label="Link Marketplace" type="navigate" target="marketplace_home"/>
+      <button label="ANALYTICS" type="navigate" target="data_screen"/>
+      <button label="QUESTS" type="navigate" target="mgr_quests"/>
+      <button label="BADGES" type="navigate" target="data_badges"/>
+      <button label="Achivia AI Assistant — Overall Performance" type="action" target="ai_panel"/>
+      <button label="Achivia AI Assistant — Profile Development" type="action" target="ai_panel"/>
+      <button label="Performance Review" type="navigate" target="perf_review"/>
+    </screen>
+
+    <screen id="avatar_editor" kind="modal" title="Personalizza Avatar">
+      <button label="Salva" type="action" target="mgr_profile"/>
+    </screen>
+
+    <screen id="mgr_management" title="Management">
+      <button label="Employees" type="navigate" target="mgr_employees"/>
+      <button label="Quests" type="navigate" target="mgr_quests"/>
+      <button label="Help Request" type="navigate" target="mgr_help_requests"/>
+      <button label="Projects" type="navigate" target="mgr_projects"/>
+    </screen>
+
+    <screen id="mgr_employees" title="Employees (tabella + ricerca)">
+      <button label="Seleziona Dipendente" type="navigate" target="employee_detail"/>
+      <button label="Filtra (nome/team/livello)" type="action"/>
+    </screen>
+    <screen id="employee_detail" title="Dettaglio Dipendente">
+      <button label="Tab Overview" type="action"/>
+      <button label="Tab Quests" type="action"/>
+      <button label="Tab Teams" type="action"/>
+      <button label="Tab Analytics" type="action"/>
+      <button label="Icona chat" type="modal" target="dm_popup"><effect>Messaggio recapitato via email</effect></button>
+    </screen>
+
+    <screen id="mgr_quests" title="Quests (My Quest + gestione)">
+      <button label="Nuova Quest" type="navigate" target="quest_new"/>
+      <button label="Quest in scadenza" type="navigate" target="quest_expiring"/>
+      <button label="Quest attive" type="navigate" target="quest_active"/>
+      <button label="Approvazione Quest" type="navigate" target="quest_approve"/>
+      <button label="Quest salvate" type="navigate" target="quest_saved"/>
+    </screen>
+    <screen id="quest_new" title="Nuova Quest">
+      <button label="Usa come template" type="navigate" target="quest_saved" enabled_if="no_assignee"/>
+      <button label="Salva (no assignee)" type="action" target="mgr_quests"><effect>Diventa Side Quest</effect></button>
+      <button label="Salva (con assignee)" type="action" target="mgr_quests"><effect>Quest attiva, attende accettazione dipendente</effect></button>
+    </screen>
+    <screen id="quest_expiring" title="Quest in scadenza (≤48h + scadute)">
+      <button label="Messaggia assegnatario" type="modal" target="dm_popup"/>
+      <button label="Filtri" type="action"/>
+    </screen>
+    <screen id="quest_active" title="Quest attive">
+      <button label="Chiudi Quest in anticipo" type="modal" target="confirm_close"/>
+      <button label="Filtri" type="action"/>
+    </screen>
+    <screen id="quest_approve" title="Approvazione Quest">
+      <button label="Conferma" type="modal" target="confirm_approve">
+        <effect>Quest chiusa → assegna XP + crediti</effect>
+      </button>
+      <button label="Rifiuta" type="action"><effect>Quest resta attiva, richiede modifica scadenza</effect></button>
+    </screen>
+    <screen id="quest_saved" title="Quest salvate (template)">
+      <button label="Usa Template" type="navigate" target="quest_new"><effect>Precompila tutto tranne 'Assegna a'</effect></button>
+      <button label="Cancella template" type="action"/>
+    </screen>
+
+    <screen id="mgr_help_requests" title="Help Requests">
+      <button label="Seleziona Quest" type="modal" target="help_popup"/>
+      <button label="Filtri (team/assegnatario/titolo)" type="action"/>
+    </screen>
+
+    <screen id="mgr_projects" title="Projects">
+      <button label="New Project" type="navigate" target="project_new"/>
+      <button label="Progetti Esistenti" type="navigate" target="project_existing"/>
+      <button label="Progetti Chiusi" type="navigate" target="project_closed"/>
+    </screen>
+    <screen id="project_new" title="Nuovo Progetto">
+      <button label="Aggiungi Dipendente (ricerca)" type="action"/>
+      <button label="Crea" type="action" target="mgr_projects"><effect>Le Quest del team diventano Istanze</effect></button>
+    </screen>
+
+    <screen id="mgr_notifications" title="Notifications">
+      <button label="Apri notifica deadline" type="navigate" target="quest_expiring"/>
+      <button label="Apri richiesta approvazione" type="navigate" target="quest_approve"/>
+    </screen>
+  </flow>
+
+  <!-- ============ DIPENDENTE ============ -->
+  <flow id="employee">
+    <tabbar role="employee">
+      <tab label="Profile" target="emp_profile"/>
+      <tab label="My Quests" target="emp_quests"/>
+      <tab label="Analytics" target="emp_analytics"/>
+      <tab label="Help" target="emp_help"/>
+      <tab label="Menu" target="menu_screen"/>
+    </tabbar>
+
+    <screen id="emp_profile" title="Profile / Home">
+      <button label="Icona piccione (DM)" type="navigate" target="emp_help" badge="unread_dm"/>
+      <button label="Personalizza avatar" type="modal" target="avatar_editor"/>
+      <button label="Link Marketplace" type="navigate" target="marketplace_home"/>
+    </screen>
+
+    <screen id="emp_quests" title="My Quests">
+      <button label="Accetta Quest" type="action"/>
+      <button label="Rifiuta Quest" type="modal" target="reject_popup"><effect>Motivazione obbligatoria</effect></button>
+      <button label="Richiedi aiuto" type="modal" target="help_request_popup"/>
+      <button label="Segna come completata" type="action"><effect>Notifica al Manager</effect></button>
+    </screen>
+    <screen id="help_request_popup" kind="modal" title="Richiesta aiuto">
+      <button label="Invia a utente scelto" type="action" target="emp_help"><effect>Va in 'Le mie conversazioni'</effect></button>
+      <button label="Invia senza destinatario" type="action" target="emp_help"><effect>Va in 'Bacheca Team'</effect></button>
+    </screen>
+
+    <screen id="emp_analytics" title="Analytics personali">
+      <button label="Confronta con team" type="action"/>
+    </screen>
+
+    <screen id="emp_help" title="Help">
+      <button label="Bacheca Team — Accetta Side Quest" type="action" target="emp_quests"/>
+      <button label="Le mie conversazioni" type="navigate" target="messaging"/>
+    </screen>
+  </flow>
+
+  <!-- ============ SCHERMATE CONDIVISE ============ -->
+  <flow id="shared">
+    <screen id="data_screen" title="Data / Analytics" used_by="admin,manager">
+      <button label="Confronto diagrammi sovrapponibili" type="action"/>
+      <button label="Assegna badge" type="modal" target="badge_picker"/>
+    </screen>
+
+    <screen id="menu_screen" title="Menu" used_by="manager,employee">
+      <button label="Marketplace" type="navigate" target="marketplace_home"/>
+      <button label="Aiuto" type="navigate" target="static_help"/>
+      <button label="FAQ" type="navigate" target="static_faq"/>
+      <button label="Impostazioni" type="navigate" target="settings_screen"/>
+      <button label="About Achivia" type="navigate" target="static_about"/>
+      <button label="Termini di servizio" type="navigate" target="static_terms"/>
+      <button label="Privacy Policy" type="navigate" target="static_privacy"/>
+      <button label="Logout" type="action" target="auth_choice"/>
+    </screen>
+    <screen id="settings_screen" title="Impostazioni">
+      <button label="Attiva notifiche" type="toggle"/>
+      <button label="Dark Mode" type="toggle"/>
+      <button label="Cambia Password" type="navigate" target="reset_password"/>
+      <button label="Export data (wave 2)" type="action"><effect>Download Excel</effect></button>
+      <button label="Delete Account" type="modal" target="delete_account_flow"/>
+    </screen>
+    <screen id="delete_account_flow" kind="modal" title="Eliminazione account">
+      <button label="Conferma 1" type="modal" target="delete_account_choice"/>
+    </screen>
+    <screen id="delete_account_choice" kind="modal" title="Altre Org. possono trovarti?">
+      <button label="Sì" type="action"><effect>Account mantenuto, non associato</effect></button>
+      <button label="No" type="action"><effect>Account anonimizzato (solo id), performance conservate</effect></button>
+    </screen>
+
+    <screen id="marketplace_home" title="Marketplace">
+      <button label="Acquista prodotto" type="modal" target="confirm_purchase">
+        <effect>Decurta crediti → registra acquisto</effect>
+      </button>
+      <button label="I miei acquisti" type="navigate" target="my_purchases"/>
+      <button label="Info crediti" type="navigate" target="static_credits_info"/>
+    </screen>
+    <screen id="marketplace_backoffice" title="Backoffice Web (Admin only)" platform="web" access="admin">
+      <button label="Inserisci prodotto / immagine / valore crediti" type="action"/>
+    </screen>
+
+    <screen id="messaging" title="Messaggistica DM"/>
+  </flow>
+</navigation_graph>

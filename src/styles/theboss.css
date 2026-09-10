@@ -1,0 +1,399 @@
+/**
+ * The Boss: solo quello che gli altri due giochi non hanno gia'.
+ *
+ * Pannelli, pulsanti, barre, righe di dati e tacche a squadra sono quelli
+ * di Achivia e non si ridefiniscono: qui dentro c'e' la disposizione della
+ * squadra e il ritmo dei paragrafi della storia, che sono le uniche due
+ * cose che nessun altro schermo dell'app aveva bisogno di fare.
+ *
+ * I ritratti sono pixel art a sedici pixel ingranditi di quattro: perche'
+ * restino netti serve `image-rendering: pixelated` e un ingrandimento
+ * intero. Un 3,5 li sfocherebbe, ed e' il genere di difetto che si vede
+ * solo sul telefono di qualcun altro.
+ */
+
+.theboss-riga {
+  margin: 0 0 var(--space-3);
+  line-height: 1.55;
+}
+.theboss-riga:last-child { margin-bottom: 0; }
+
+.theboss-azioni {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+/* La squadra: schede che si adattano, mai una sola in fila su un telefono. */
+.theboss-squadra {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: var(--space-3);
+}
+
+.theboss-scheda {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.theboss-scheda figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.theboss-scheda b { line-height: 1.2; }
+.theboss-scheda small { opacity: 0.8; }
+.theboss-scheda .tv-nota { margin: 0; }
+
+.theboss-ritratto {
+  width: 64px;
+  height: 64px;
+  flex: none;
+  /* Il foglio e' una striscia di quattro fotogrammi da 16: ingrandendolo di
+     quattro diventa 256x64, e la finestra da 64x64 ferma sul primo mostra
+     solo quello. Con un `img` servirebbe un ritaglio e una trasformazione,
+     che uscirebbe dal flusso e lascerebbe un buco nella griglia. */
+  background-repeat: no-repeat;
+  background-size: 256px 64px;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+
+/* ═══ La partita ═══
+   Quello che non c'era gia' in Achivia: la stanza (che e' una tela con la
+   pixel art ingrandita di un numero intero), l'emoji sopra la testa, e la
+   disposizione della giornata. Pannelli, pulsanti, barre e tacche restano
+   quelli dell'app. */
+
+.tb-partita {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 0 14px 16px;
+
+  /* Il vetro dell'app e' velato — lascia passare un quinto di castello — e
+     va benissimo sopra una pagina ferma. Qui sotto pero' non c'e' una
+     pagina ferma: c'e' il cielo che si muove, o la stanza a colori pieni,
+     e attraverso il velo le scritte non si leggono piu'. Stesso colore,
+     senza velo: e' l'unico posto dell'app dove serve. */
+  --tb-vetro: #050a10;
+}
+
+/* La stanza. `image-rendering: pixelated` e un ingrandimento intero: la
+   tela e' 224x144 e cresce fino a riempire la larghezza, ma il browser
+   scala di un numero non intero e la pixel art si sfoca. Per questo la
+   larghezza e' bloccata sui multipli — 672 e' x3, 896 e' x4 — e sotto si
+   scende a x2 invece di prendere una misura qualsiasi. */
+.tb-ufficio { position: relative; align-self: center; line-height: 0; }
+.tb-tela {
+  display: block;
+  width: 672px; height: 432px;      /* x3 */
+  max-width: 100%;
+  image-rendering: pixelated;
+  background: #04070b;
+}
+@media (min-width: 940px) { .tb-tela { width: 896px; height: 576px; } }   /* x4 */
+@media (max-width: 700px) { .tb-tela { width: 448px; height: 288px; } }   /* x2 */
+
+/* L'emoji dell'umore: sopra la testa di chi e' entrato, cioe' sopra il
+   punto in cui la stanza lo disegna (48,76 su 224x144). In percentuale,
+   cosi' resta al suo posto a qualunque ingrandimento.
+
+   Vive **un secondo esatto**, e in quel secondo fa tre cose: appare
+   sfumando e salendo (due decimi), resta leggibile (sei), sfuma via
+   salendo ancora (due). Un'emoji che compare e sparisce di colpo sembra un
+   errore di disegno; una che dura tre secondi diventa un'etichetta. Il
+   tempo di React e quello dell'animazione sono lo stesso — mille
+   millesimi, scritti in tutti e due i posti — e se uno dei due cambia va
+   cambiato anche l'altro. */
+.tb-umore {
+  position: absolute;
+  left: 25%; top: 38%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(22px, 3.6vw, 34px);
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
+  animation: tb-umore-vita 1000ms ease-out forwards;
+}
+@keyframes tb-umore-vita {
+  0%   { opacity: 0; transform: translate(-50%, -30%) scale(0.7); }
+  20%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  80%  { opacity: 1; transform: translate(-50%, -56%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -74%) scale(0.95); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tb-umore { animation: tb-umore-quieta 1000ms linear forwards; }
+  @keyframes tb-umore-quieta { 0% { opacity: 0; } 12% { opacity: 1; } 82% { opacity: 1; } 100% { opacity: 0; } }
+}
+
+/* ═══ I fumetti ═══
+
+   Due, e non si incontrano mai. Quello della richiesta sta appoggiato in
+   alto a sinistra, quello della scelta in basso a destra, e tutti e due
+   hanno un tetto di altezza del quaranta per cento della scena: due
+   riquadri da quaranta, uno in cima e uno in fondo, non possono toccarsi
+   nemmeno con il testo piu' lungo sullo schermo piu' piccolo. Quando il
+   testo non ci sta, scorre dentro il fumetto — che e' l'unica cosa che
+   puo' cedere senza rompere la promessa.
+
+   La cornice e gli angoli vengono da `ui-tile`, che e' gia' negli elenchi
+   delle tacche: un fumetto e' una superficie come le altre, e non aveva
+   bisogno di una famiglia nuova. */
+
+.tb-scena { position: relative; align-self: center; max-width: 100%; }
+
+/* ═══ Quello che si scorre ═══
+
+   Un fumetto e il report hanno un tetto d'altezza, quindi il testo lungo
+   scorre. Scorreva gia' — `overflow-y: auto` c'era — ma **non si vedeva**:
+   niente barra sul telefono, nessun bordo tagliato, e chi legge crede che
+   la richiesta finisca dove finisce la finestra. Una parte del testo
+   nascosta che nessuno sa di poter andare a prendere e' testo perduto.
+
+   Due segni, e nessuno dei due si vede quando non serve:
+
+   - **La barra** e' sottile, sempre disegnata, del colore della cornice.
+     Su iOS e Android la barra di sistema compare solo mentre si scorre,
+     cioe' proprio quando non serve piu' saperlo.
+   - **L'ombra ai bordi** e' il trucco delle ombre di scorrimento: due
+     sfumature del colore del vetro attaccate al contenuto (`local`) e due
+     ombre attaccate alla finestra (`scroll`). Quando si e' in cima la
+     sfumatura copre l'ombra di sopra, quando si e' in fondo copre quella
+     di sotto, e in mezzo si vedono tutte e due. Non serve JavaScript e non
+     serve sapere quanto e' lungo il testo: lo dice il disegno da solo. */
+.tb-scorre {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--btn-cornice) transparent;
+  background:
+    linear-gradient(var(--tb-vetro, #050a10) 30%, rgba(5, 10, 16, 0)) top / 100% 22px,
+    linear-gradient(rgba(5, 10, 16, 0), var(--tb-vetro, #050a10) 70%) bottom / 100% 22px,
+    radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0)) top / 100% 9px,
+    radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0)) bottom / 100% 9px,
+    var(--tb-vetro, #050a10);
+  background-repeat: no-repeat;
+  background-attachment: local, local, scroll, scroll, local;
+}
+.tb-scorre::-webkit-scrollbar { width: 6px; }
+.tb-scorre::-webkit-scrollbar-track { background: transparent; }
+.tb-scorre::-webkit-scrollbar-thumb { background: var(--btn-cornice); border-radius: 3px; }
+
+.tb-fumetto {
+  position: absolute;
+  z-index: 2;
+  max-height: 40%;
+  padding: 10px 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  animation: tb-fumetto-entra 180ms ease-out;
+}
+@keyframes tb-fumetto-entra { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .tb-fumetto { animation: none; } }
+/* non e' un pulsante: non deve accendersi al passaggio del puntatore */
+.tb-fumetto:hover { border-color: var(--btn-cornice); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55); }
+
+.tb-fumetto.is-richiesta { left: 2%; top: 3%; width: 62%; }
+.tb-fumetto.is-scelta { right: 2%; bottom: 4%; width: 50%; }
+
+/* Sul telefono cambia la regola. Sullo schermo grande il fumetto della
+   scelta puo' allargarsi in basso a destra perche' resta comunque spazio
+   per vedere il cavaliere; su 448 pixel invece lo copriva tutto, e un
+   gioco in cui il tuo personaggio sta sotto una finestra non e' piu' una
+   scena, e' un modulo.
+
+   Quindi qui il fumetto della scelta non si accontenta di rimpicciolirsi:
+   si sposta **di fianco** al cavaliere e ci resta. Il cavaliere sta fra il
+   43% e il 61% della larghezza della stanza (x 96..136 su 224, vedi
+   `contenuti/stanza.js`), e il fumetto comincia al 63%: due punti di
+   margine, e non si toccano a nessun ingrandimento perche' sono tutte e
+   due percentuali della stessa scena. In cambio della colonna stretta i
+   tre pulsanti vanno in fila verticale e rimpiccioliscono — sono tre
+   parole, ci stanno.
+
+   E siccome i due fumetti stanno ormai in **due colonne diverse** — la
+   richiesta a sinistra del cavaliere, la scelta a destra — non hanno piu'
+   bisogno di stare lontani anche in verticale: si sfiorano in altezza
+   quanto vogliono, tanto non si incontrano mai. E' quello che ha liberato
+   lo spazio che serviva alla richiesta, che con un tetto al 34% di 288
+   pixel aveva meno di tre righe di testo visibili e tutto il resto
+   nascosto sotto il bordo.
+
+   Il tetto nuovo e' 46%, e non e' un numero scelto a occhio: e' dove
+   comincia la testa del cavaliere. Piu' in giu' di cosi' la richiesta gli
+   finirebbe addosso, che e' lo stesso difetto che avevamo tolto alle
+   risposte. Un terzo di spazio in piu', e il resto lo fa lo scorrimento
+   che adesso si vede. */
+@media (max-width: 700px) {
+  .tb-fumetto { padding: 7px 8px; font-size: 0.86em; }
+  .tb-fumetto.is-richiesta { left: 1%; top: 2%; width: 60%; max-height: 46%; }
+  .tb-fumetto.is-scelta {
+    left: 63%; right: 1%; width: auto;
+    bottom: 2%; max-height: 52%;
+  }
+  .tb-fumetto.is-scelta .tb-scelte { flex-direction: column; gap: 5px; }
+  .tb-fumetto.is-scelta .ui-btn { padding: 5px 7px; }
+  .tb-fumetto.is-scelta .tb-tasto { margin-right: 4px; }
+}
+
+/* I pulsanti della scelta stanno in colonna quando non ci stanno in fila, e
+   la scritta lunga va a capo invece di uscire dal fumetto. */
+/* La domanda: la prima cosa che si legge nel fumetto delle risposte, e
+   l'unica che dice che cosa si sta decidendo. */
+.tb-chiede { margin: 0 0 6px; font-weight: 700; color: var(--tv-bright); }
+
+.tb-fumetto.is-scelta .tb-scelte { margin-top: 0; }
+.tb-fumetto.is-scelta .tb-scelte > * { flex: 1 1 auto; min-width: 0; }
+.tb-fumetto.is-scelta .ui-btn { white-space: normal; text-align: left; }
+
+.tb-fumetto-chi { margin: 0 0 4px; display: flex; flex-wrap: wrap; gap: 0 8px; align-items: baseline; }
+.tb-fumetto-chi small { opacity: 0.72; }
+.tb-fumetto-titolo { margin: 0 0 4px; font-weight: 700; }
+
+/* La coda: un triangolo fatto coi bordi, dello stesso colore del fumetto,
+   con un secondo triangolo dietro che fa da cornice. */
+.tb-coda { position: absolute; width: 0; height: 0; }
+.tb-coda.is-giu-sinistra {
+  left: 22px; bottom: -13px;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 13px solid var(--tb-vetro, #050a10);
+  filter: drop-shadow(0 2px 0 var(--btn-cornice));
+}
+.tb-coda.is-sinistra {
+  left: -13px; top: 24px;
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid transparent;
+  border-right: 13px solid var(--tb-vetro, #050a10);
+  filter: drop-shadow(-2px 0 0 var(--btn-cornice));
+}
+
+/* ═══ La macchina da scrivere ═══ */
+.tb-battuta { margin: 0; line-height: 1.5; cursor: pointer; }
+.tb-battuta.is-finita { cursor: default; }
+.tb-cursore {
+  display: inline-block;
+  width: 0.55em; height: 1em;
+  margin-left: 1px;
+  vertical-align: -0.12em;
+  background: currentColor;
+  opacity: 0.8;
+  animation: tb-lampeggia 620ms steps(2) infinite;
+}
+@keyframes tb-lampeggia { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tb-cursore { animation: none; } }
+
+/* ═══ Il report di fine giornata ═══
+   Sopra l'ufficio, non al posto suo: la stanza resta li' sotto, scurita, e
+   si vede di essere ancora dentro la partita. */
+.tb-report {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: rgba(4, 7, 11, 0.78);
+  backdrop-filter: blur(3px);
+  animation: tb-report-entra 200ms ease-out;
+}
+@keyframes tb-report-entra { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tb-report { animation: none; } }
+.tb-report-foglio {
+  width: min(560px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  /* Niente `background` qui: lo mette `tb-scorre`, e serve che lo metta
+     lui. Le ombre di scorrimento funzionano perche' due sfumature del
+     colore del fondo coprono le ombre agli estremi — riscrivere il fondo
+     dopo, anche solo con `transparent`, le spegnerebbe tutte e due e il
+     report tornerebbe a tagliare il testo senza dirlo. */
+}
+
+/* Sul telefono il report non si appoggia alla stanza, si appoggia allo
+   schermo.
+
+   La stanza li' e' alta 288 pixel: dentro ci sta il primo riquadro e
+   basta, e tutto il resto — le conseguenze che tornano indietro, i guai in
+   officina, la notizia dal regno — resta sotto il bordo. Ed e' proprio
+   quella la parte che insegna a giocare: e' li' che si legge che il
+   disastro di oggi nasce dalla decisione di dieci giorni fa.
+
+   Coprire lo schermo non vuol dire uscire dalla schermata di gioco: e'
+   sempre lo stesso indirizzo, la partita e' sempre li' sotto, e chiudendo
+   si torna nella stessa stanza dalla stessa porta. Cambia solo quanto
+   spazio ha il foglio per essere letto. */
+@media (max-width: 700px) {
+  .tb-report {
+    position: fixed;
+    padding:
+      max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+      max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+}
+
+/* Quello che i lettori di schermo devono sentire e gli occhi non vedere. */
+.tb-solo-lettori {
+  position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Il cruscotto.
+
+   Sta sopra la stanza, cioe' sopra lo sfondo animato dell'app, e prima non
+   aveva niente sotto: sette numeri e i nomi degli eventi appoggiati
+   direttamente sul cielo, illeggibili appena una stella ci passava dietro.
+   Adesso e' una finestra come le altre — cornice e tacche arrivano da
+   `ui-tile`, il fondo e' il vetro pieno — e i numeri si leggono sempre.
+
+   Non e' un pulsante: non si accende al passaggio del puntatore e non si
+   abbassa quando lo si tocca. */
+.tb-cruscotto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 10px 12px;
+  background: var(--tb-vetro, #050a10);
+}
+.tb-cruscotto:hover, .tb-cruscotto:focus-visible {
+  border-color: var(--btn-cornice);
+  box-shadow: none;
+}
+.tb-cruscotto:active { transform: none; border-color: var(--btn-cornice); }
+.tb-barre { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+@media (max-width: 620px) { .tb-barre { grid-template-columns: 1fr; } }
+.tb-numeri { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+.tb-voce { display: flex; flex-direction: column; line-height: 1.15; }
+.tb-voce small { opacity: 0.7; font-size: 0.72em; letter-spacing: 0.06em; }
+.tb-voce b { font-variant-numeric: tabular-nums; }
+.tb-voce i { font-style: normal; opacity: 0.6; }
+.tb-voce.is-allarme b { color: var(--tv-errore, #ff7a5c); }
+.tb-eventi { margin: 0; padding-left: 1.1em; }
+.tb-eventi li { margin-bottom: 2px; }
+
+/* La richiesta */
+.tb-chi { margin: 0 0 var(--space-2); }
+.tb-testo { margin: 0 0 var(--space-2); line-height: 1.55; }
+.tb-memoria { margin: 0 0 var(--space-2); }
+.tb-scelte { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+.tb-tasto { opacity: 0.65; margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+/* La fine della partita */
+.tb-fine { display: flex; flex-direction: column; gap: var(--space-3); }
+.tb-elenco { margin: 0; padding-left: 1.1em; }
+
+/* I consigli di fine partita. Uno per riga, staccati: sono tre paragrafi
+   che si leggono, non tre voci di un elenco che si scorre. */
+.tb-consigli { margin: 0; padding-left: 1.1em; display: flex; flex-direction: column; gap: var(--space-3); }
+.tb-consigli li { line-height: 1.55; }
+.tb-consigli li::marker { color: var(--tv-primary); }
+.tb-elenco li { margin-bottom: 6px; line-height: 1.5; }

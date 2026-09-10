@@ -1,0 +1,380 @@
+/* ═══════════════════════════════════════════════════════════════
+   ARENA — Achivia: Survival
+
+   Due schermate. L'atrio e' una pagina come le altre, col vestito del
+   terminale. La partita e' una tela a tutto schermo, sopra tutto,
+   con il cruscotto appoggiato in alto e la leva in basso.
+
+   Le superfici e i comandi nuovi — `arena-scheda`, `arena-modulo` —
+   portano le tacche agli angoli: sono negli elenchi di `terminal.css`,
+   capitolo «Gli angoli», come vuole la regola del repository.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── Mentre si gioca lo sfondo vivo si spegne ───
+   Sotto una tela a tutto schermo non si vede, e le sue stelle animate
+   costano composizione per niente. */
+body.is-in-arena .mo-sfondo { display: none; }
+
+/* ─── La partita ─── */
+.arena-partita {
+  position: fixed;
+  inset: 0;
+  z-index: 70;              /* sopra la barra (60) e le finestre */
+  background: #04070b;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.arena-tela {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  cursor: crosshair;
+}
+
+/* ─── Il cruscotto ─── */
+.arena-hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: linear-gradient(rgba(4, 7, 11, 0.85), rgba(4, 7, 11, 0));
+  pointer-events: none;
+  font-family: var(--tv-font);
+  color: var(--tv-primary);
+}
+.arena-hud-barre { display: flex; flex-direction: column; gap: 2px; max-width: 420px; }
+.arena-hud .tv-progress { font-size: 0.7rem; }
+/* La barra del boss: piu' larga delle altre due, e rossa anche nel nome. */
+.arena-hud-boss { max-width: 560px; }
+.arena-hud-boss .tv-progress { font-size: 0.78rem; }
+.arena-hud-boss .tv-progress-label { color: var(--tv-error); letter-spacing: 0.1em; }
+.arena-hud-numeri {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 0.72rem;
+}
+.arena-hud-voce { display: inline-flex; align-items: baseline; gap: 6px; }
+.arena-hud-voce small { font-size: 0.6rem; letter-spacing: 0.08em; color: var(--tv-dim); }
+.arena-hud-voce b { font-weight: 700; color: var(--tv-bright); font-variant-numeric: tabular-nums; }
+.arena-hud-pausa { pointer-events: auto; margin-left: auto; }
+
+/* ─── L'avviso di un traguardo: in alto a sinistra, entra da sinistra, sta, esce ─── */
+.arena-avviso {
+  position: absolute;
+  top: calc(96px + env(safe-area-inset-top, 0px));
+  left: calc(10px + env(safe-area-inset-left, 0px));
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px 6px 10px;
+  max-width: min(320px, calc(100% - 20px));
+  background: rgba(4, 7, 11, 0.88);
+  border: 1px solid var(--ui-gold);
+  border-radius: var(--tv-radius);
+  color: var(--tv-bright);
+  font-family: var(--tv-font);
+  box-shadow: 0 0 14px rgba(255, 194, 51, 0.3);
+  pointer-events: none;
+  animation: arena-avviso-entra 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.arena-avviso.is-esce { animation: arena-avviso-esce 380ms ease-in forwards; }
+.arena-avviso-segno { font-size: 1.3rem; color: var(--ui-gold); animation: arena-avviso-stella 900ms ease-in-out infinite alternate; }
+.arena-avviso-testo { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.arena-avviso-testo small { font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ui-gold); }
+.arena-avviso-testo b { font-size: 0.82rem; }
+.arena-avviso-testo span { font-size: 0.64rem; color: var(--tv-primary); }
+@keyframes arena-avviso-entra { from { transform: translateX(-110%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes arena-avviso-esce { from { transform: none; opacity: 1; } to { transform: translateX(-110%); opacity: 0; } }
+@keyframes arena-avviso-stella { from { transform: scale(1); } to { transform: scale(1.25); } }
+@media (prefers-reduced-motion: reduce) {
+  .arena-avviso, .arena-avviso.is-esce, .arena-avviso-segno { animation: none; }
+  .arena-avviso.is-esce { opacity: 0; }
+}
+
+/* ─── Gli effetti attivi: una riga di etichette con la barretta del tempo ─── */
+.arena-attivi {
+  list-style: none; margin: 2px 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 4px 8px;
+  font-size: 0.62rem;
+}
+.arena-attivo {
+  display: inline-grid; grid-template-columns: 16px auto auto; grid-template-rows: auto 3px;
+  column-gap: 5px; row-gap: 2px; align-items: center;
+  padding: 2px 6px 3px 4px;
+  background: rgba(4, 7, 11, 0.55);
+  border: 1px solid var(--tv-dim);
+  border-radius: var(--btn-raggio);
+}
+.arena-attivo img { grid-row: 1 / span 2; image-rendering: pixelated; }
+.arena-attivo-vuoto { grid-row: 1 / span 2; width: 16px; height: 16px; background: var(--tv-dim); }
+.arena-attivo-nome { color: var(--tv-primary); letter-spacing: 0.04em; }
+.arena-attivo-tempo { color: var(--tv-bright); font-variant-numeric: tabular-nums; }
+.arena-attivo-barra { grid-column: 2 / span 2; height: 3px; background: rgba(255, 255, 255, 0.12); }
+.arena-attivo-barra > span { display: block; height: 100%; background: var(--tv-primary); transition: width 120ms linear; }
+.arena-attivo.is-sinergia { grid-template-rows: auto; border-color: var(--ui-gold); }
+.arena-attivo.is-sinergia .arena-attivo-nome { color: var(--ui-gold); }
+
+/* ─── L'annuncio di una cassa: nome, icona, che cosa fa, per quanto ─── */
+.arena-annuncio {
+  display: flex; align-items: center; gap: 10px;
+  margin: 6px auto 0; padding: 6px 12px;
+  max-width: 360px;
+  background: rgba(4, 7, 11, 0.85);
+  border: 1px solid var(--tv-primary);
+  border-radius: var(--tv-radius);
+  color: var(--tv-bright);
+  animation: arena-annuncio-entra 220ms ease-out;
+}
+.arena-annuncio-icona { image-rendering: pixelated; flex: 0 0 auto; }
+.arena-annuncio-testo { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.arena-annuncio-rarita { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tv-dim); }
+.arena-annuncio-nome { font-size: 0.82rem; }
+.arena-annuncio-desc { font-size: 0.66rem; color: var(--tv-primary); }
+.arena-annuncio.is-insolita { border-color: #8fd06a; }
+.arena-annuncio.is-insolita .arena-annuncio-rarita { color: #8fd06a; }
+.arena-annuncio.is-rara { border-color: #4ad9ff; box-shadow: 0 0 12px rgba(74, 217, 255, 0.35); }
+.arena-annuncio.is-rara .arena-annuncio-rarita { color: #4ad9ff; }
+.arena-annuncio.is-epica { border-color: #c58cff; box-shadow: 0 0 18px rgba(197, 140, 255, 0.5); animation: arena-annuncio-entra 220ms ease-out, arena-annuncio-epica 900ms ease-in-out infinite alternate; }
+.arena-annuncio.is-epica .arena-annuncio-rarita { color: #ffe08a; }
+@keyframes arena-annuncio-entra { from { transform: translateY(-6px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes arena-annuncio-epica { from { box-shadow: 0 0 10px rgba(197, 140, 255, 0.35); } to { box-shadow: 0 0 22px rgba(255, 224, 138, 0.6); } }
+@media (prefers-reduced-motion: reduce) { .arena-annuncio, .arena-annuncio.is-epica { animation: none; } }
+
+/* ─── La leva ─── */
+.arena-leva {
+  position: absolute;
+  left: calc(22px + env(safe-area-inset-left, 0px));
+  bottom: calc(26px + env(safe-area-inset-bottom, 0px));
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 1px solid var(--tv-border);
+  background: rgba(5, 10, 16, 0.45);
+  touch-action: none;
+}
+.arena-leva.is-attiva { border-color: var(--tv-border-forte); }
+/* Col telefono in verticale la leva sta in basso al centro: il pollice ci arriva da entrambe le mani. */
+@media (orientation: portrait) {
+  .arena-leva { left: calc(50% - 60px); }
+}
+.arena-leva-pomello {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 46px; height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: rgba(74, 217, 255, 0.28);
+  border: 1px solid var(--tv-border-forte);
+  box-shadow: 0 0 12px var(--tv-glow);
+  will-change: transform;
+}
+
+/* ─── Il velo e le finestre sopra la tela ─── */
+.arena-velo {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(4, 7, 11, 0.72);
+}
+/* La pausa non e' piu' una scritta sopra la tela: e' una finestra con due
+   porte — si riprende, o si esce salvando quello che si e' fatto. Quindi i
+   suoi comandi si devono poter premere, e il velo non lascia passare piu'
+   i tocchi alla tela sotto. */
+.arena-pausa { width: 100%; max-width: 420px; }
+
+.arena-scelta, .arena-esito { width: 100%; max-width: 560px; }
+.arena-scelta-nota { margin: 8px 0 12px; color: var(--tv-dim); font-size: 0.78rem; }
+
+.arena-moduli {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 480px) {
+  .arena-moduli { grid-template-columns: 1fr; }
+}
+
+/* La carta di un modulo: un comando, con gli angoli vivi */
+.arena-modulo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px 12px;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+  text-align: center;
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+.arena-modulo:hover, .arena-modulo:focus-visible {
+  background: var(--btn-fondo-su);
+  border-color: var(--tv-border-forte);
+  box-shadow: 0 0 10px var(--tv-glow);
+}
+.arena-modulo:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.arena-modulo:active { transform: translateY(1px); }
+.arena-modulo-testa { align-self: stretch; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.arena-modulo-tasto {
+  font-size: 0.6rem;
+  color: var(--tv-dim);
+  border: 1px solid var(--tv-border);
+  padding: 1px 5px;
+}
+/* L'etichetta dice che carta e': arma nuova, livello, evoluzione, modulo.
+   Il colore fa il resto: oro per quello che si prende, fosforo per quello
+   che cresce, brace per l'evoluzione. */
+.arena-modulo-etichetta {
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+/* la rarita' della carta: nel bordo e nell'etichetta */
+.arena-modulo.is-rarita-insolita { border-color: rgba(143, 208, 106, 0.7); }
+.arena-modulo.is-rarita-insolita .arena-modulo-etichetta { color: #8fd06a; }
+.arena-modulo.is-rarita-rara { border-color: rgba(74, 217, 255, 0.85); box-shadow: 0 0 10px rgba(74, 217, 255, 0.25); }
+.arena-modulo.is-rarita-rara .arena-modulo-etichetta { color: #4ad9ff; }
+.arena-modulo.is-rarita-epica { border-color: rgba(197, 140, 255, 0.9); box-shadow: 0 0 14px rgba(197, 140, 255, 0.4); }
+.arena-modulo.is-rarita-epica .arena-modulo-etichetta { color: #c58cff; }
+.arena-modulo-etichetta.is-arma { color: var(--ui-gold); }
+.arena-modulo-etichetta.is-potenzia { color: var(--tv-primary); }
+.arena-modulo-etichetta.is-evoluzione { color: var(--tv-warn); }
+.arena-modulo-icona {
+  width: 48px; height: 48px;
+  image-rendering: pixelated;
+}
+.arena-modulo-icona.is-vuota { background: rgba(74, 217, 255, 0.12); }
+.arena-modulo-nome { font-size: 0.78rem; color: var(--tv-bright); }
+.arena-modulo-desc { font-size: 0.68rem; line-height: 1.45; color: var(--tv-dim); }
+
+.arena-esito-azioni { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.arena-esito-traguardi { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; margin: 10px 0 0; font-size: 0.72rem; }
+.arena-esito-traguardi small { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tv-dim); }
+.arena-esito-traguardi b { color: var(--ui-gold); }
+
+/* ─── La classifica: una riga per posto, il proprio evidenziato, il podio colorato ─── */
+.arena-classifica-pagina .ui-chips { margin-bottom: 8px; }
+.arena-posti { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.arena-posto {
+  display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+}
+.arena-posto.is-mio { border-color: var(--tv-primary); background: rgba(74, 217, 255, 0.08); }
+.arena-posto.is-podio-1 .arena-posto-numero { color: var(--ui-gold); }
+.arena-posto.is-podio-2 .arena-posto-numero { color: #d6dde6; }
+.arena-posto.is-podio-3 .arena-posto-numero { color: #c98a5a; }
+.arena-posto-numero { font-size: 0.9rem; text-align: right; font-variant-numeric: tabular-nums; }
+.arena-posto-chi { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.arena-posto-chi small { font-size: 0.62rem; color: var(--tv-dim); }
+.arena-posto-punti { font-size: 0.85rem; color: var(--tv-bright); font-variant-numeric: tabular-nums; }
+.arena-posto-salto { grid-column: 1 / -1; text-align: center; color: var(--tv-dim); }
+
+/* ─── I traguardi dell'arena: una riga per traguardo, con la barra del progresso ─── */
+.arena-traguardi { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.arena-traguardo {
+  display: grid; gap: 4px;
+  padding: 8px 10px;
+  background: var(--btn-fondo);
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  color: var(--tv-primary);
+}
+.arena-traguardo.is-sbloccato { border-color: var(--ui-gold); }
+.arena-traguardo-testa { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.arena-traguardo-nome { font-size: 0.8rem; color: var(--tv-bright); }
+.arena-traguardo.is-sbloccato .arena-traguardo-nome { color: var(--ui-gold); }
+.arena-traguardo-stato { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tv-dim); white-space: nowrap; }
+.arena-traguardo.is-sbloccato .arena-traguardo-stato { color: var(--ui-gold); }
+.arena-traguardo-desc { font-size: 0.7rem; }
+.arena-traguardo-req { font-size: 0.64rem; color: var(--tv-dim); }
+.arena-traguardo .tv-progress { font-size: 0.66rem; margin-top: 2px; }
+@media (max-width: 480px) { .arena-traguardo-testa { flex-direction: column; gap: 2px; } }
+
+/* ─── L'atrio ─── */
+.arena-atrio { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 var(--space-4) var(--space-6); }
+
+.arena-schede {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 8px 0 10px;
+}
+@media (min-width: 640px) { .arena-schede { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+
+/* La scheda di un personaggio: un comando con gli angoli vivi */
+.arena-scheda {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+.arena-scheda:hover:not(:disabled), .arena-scheda:focus-visible { border-color: var(--tv-border-forte); background: var(--btn-fondo-su); }
+.arena-scheda:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.arena-scheda.is-scelta { border-color: var(--tv-primary); box-shadow: 0 0 12px var(--tv-glow); }
+.arena-scheda.is-chiusa { opacity: 0.45; cursor: not-allowed; }
+.arena-scheda-nome { font-size: 0.7rem; color: var(--tv-bright); }
+.arena-scheda-classe { font-size: 0.6rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tv-dim); }
+.arena-scheda-chiusa { font-size: 0.58rem; color: var(--tv-warn); }
+.arena-scheda-desc { margin: 0 0 10px; font-size: 0.78rem; color: var(--tv-dim); }
+.arena-atrio-azioni { display: flex; gap: 10px; margin-bottom: 10px; }
+
+/* Il ritratto: il primo fotogramma della posa ferma, a pixel interi */
+.arena-ritratto {
+  display: block;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  image-rendering: pixelated;
+}
+.arena-ritratto.is-vuoto { width: 48px; height: 48px; background: rgba(74, 217, 255, 0.12); }
+
+/* ─── Chi ha chiesto meno movimento ─── */
+@media (prefers-reduced-motion: reduce) {
+  .arena-modulo, .arena-scheda { transition: none; }
+  .arena-modulo:active { transform: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GAMES — l'hub dei giochi. Una scheda per gioco, tutte uguali di
+   forma: quello che cambia e' quello che c'e' scritto dentro.
+   ═══════════════════════════════════════════════════════════════ */
+.giochi-schede { display: grid; gap: 12px; }
+@media (min-width: 720px) { .giochi-schede { grid-template-columns: repeat(2, 1fr); } }
+.gioco-scheda { display: flex; flex-direction: column; }
+.gioco-sommario {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 6px; font-size: 0.86rem; color: var(--tv-bright);
+}
+/* L'icona del gioco: quella di Survival e' un'immagine a pixel, quella di
+   Lexora un disegno vettoriale che prende il colore del testo. Stessa
+   misura per tutte e due, cosi' le due schede si somigliano. */
+.gioco-icona { width: 44px; height: 44px; flex: 0 0 auto; image-rendering: pixelated; color: var(--tv-primary); }
+.gioco-desc { margin: 0 0 8px; font-size: 0.74rem; line-height: 1.5; color: var(--tv-primary); }
+.gioco-azioni { display: flex; gap: 10px; margin-top: auto; padding-top: 10px; }

@@ -1,0 +1,346 @@
+/* ═══════════════════════════════════════════════════════════════
+   MOTION — il movimento di Achivia
+
+   Un posto solo per decidere quanto dura un movimento, con che curva
+   parte e si ferma, e quanto e' forte. Le animazioni che c'erano gia'
+   — il fiato del pannello, il cursore, le barre che si riempiono, il
+   toast degli achievement, i riquadri che si alzano sotto il dito —
+   restano dove sono e prendono i tempi da qui: non c'e' un secondo
+   sistema di animazioni accanto a quello che l'app ha gia'.
+
+   Tre regole, e valgono per tutto quello che sta qui sotto:
+
+     1. Il movimento dice qualcosa. Se non ha niente da dire, non c'e'.
+     2. Sotto il secondo. Chi usa l'app non aspetta un'animazione.
+     3. Si nota quando manca, non quando c'e'.
+
+   Niente coriandoli, niente esplosioni, niente rimbalzi: questa e'
+   un'app di lavoro, e il movimento e' quello di un oggetto ben fatto —
+   una medaglia di metallo lucidato che prende la luce, una stella che
+   brilla, un segno di spunta che si disegna.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Durate ───────────────────────────────────────────────
+     Quattro tempi, non uno per occasione. Sono i tempi che l'app
+     usava gia': qui hanno un nome. */
+  --mo-istante: 120ms;  /* un controllo che risponde al dito */
+  --mo-breve:   260ms;  /* qualcosa che compare, una barra che sale */
+  --mo-tratto:  420ms;  /* un segno che si disegna */
+  --mo-lungo:   640ms;  /* il massimo concesso a un feedback */
+
+  /* ── Curve ────────────────────────────────────────────────
+     Le cose entrano decise e si posano piano; quelle che escono
+     fanno il contrario. Il lineare resta per cio' che scorre
+     davvero, come la luce sulla medaglia. */
+  --mo-uscita:   cubic-bezier(0.22, 0.61, 0.36, 1);
+  --mo-entrata:  cubic-bezier(0.33, 0, 0.2, 1);
+  --mo-continuo: linear;
+  --mo-blocchi:  steps(20, end);  /* il passo delle barre del terminale */
+
+  /* ── Intensita' ───────────────────────────────────────────
+     Quanto si muove una cosa che si muove. Piccolo: un movimento
+     che si misura in millimetri sembra fatto bene, uno che si
+     misura in centimetri sembra un gioco. */
+  --mo-alzata: 2px;      /* traslazione */
+  --mo-scala:  1.03;     /* ingrandimento */
+  --mo-velo:   0.6;      /* opacita' di partenza di cio' che compare */
+  --mo-alone:  0 0 12px rgba(74, 217, 255, 0.32);
+
+  /* ── Ritardo ──────────────────────────────────────────────
+     Per default zero: chi vuole sfalsare due elementi uguali lo
+     dichiara sull'elemento, non nel foglio di stile. */
+  --mo-ritardo: 0ms;
+
+  /* ── Il riflesso sulle medaglie ───────────────────────────
+     Ogni medaglia riceve dal componente il proprio ciclo (fra 10 e
+     15 secondi) e il proprio ritardo, cosi' due medaglie vicine non
+     lampeggiano mai insieme. Qui ci sono i valori di ripiego. */
+  --mo-ciclo-riflesso: 12s;
+  --mo-luce: rgba(255, 255, 255, 0.42);
+
+  /* ── Le stelle dello sfondo ───────────────────────────────
+     Tre periodi, come li ha chiesti il disegno: alcune ogni cinque
+     secondi, altre ogni sette, altre ogni dieci. */
+  --mo-stella-a: 5s;
+  --mo-stella-b: 7s;
+  --mo-stella-c: 10s;
+}
+
+/* ═══ Il riflesso sulle medaglie ═══════════════════════════════
+   La medaglia non viene ridisegnata: sopra il file che c'e' gia'
+   passa una striscia di luce, ritagliata sulla medaglia stessa —
+   la maschera e' la medaglia — cosi' la luce tocca solo il metallo
+   e non il vuoto attorno. Un passaggio dura poco piu' di un secondo
+   e torna ogni dieci-quindici: il resto del tempo non c'e' niente.
+
+   Vale solo per le medaglie conquistate: quelle ancora da prendere
+   sono spente, e una medaglia spenta non riflette. */
+.mo-medaglia {
+  position: relative;
+  isolation: isolate;
+}
+
+.mo-medaglia::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+
+  /* La striscia: obliqua, stretta, bianca solo nel mezzo. */
+  background-image: linear-gradient(
+    102deg,
+    transparent 42%,
+    var(--mo-luce) 50%,
+    transparent 58%
+  );
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+
+  /* Il ritaglio e' la medaglia: `contain`, centrata, come l'immagine
+     sotto (`object-fit: contain`), cosi' luce e disegno combaciano. */
+  -webkit-mask-image: var(--mo-medaglia);
+  mask-image: var(--mo-medaglia);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+
+  mix-blend-mode: screen;
+  animation: mo-riflesso var(--mo-ciclo-riflesso) var(--mo-continuo) var(--mo-ritardo) infinite;
+}
+
+/* Nove centesimi del ciclo, e per il resto la striscia sta ferma
+   fuori campo, invisibile: su un ciclo di dodici secondi il
+   passaggio dura poco piu' di un secondo. */
+@keyframes mo-riflesso {
+  0%   { background-position: 100% 0; opacity: 0; }
+  1%   { opacity: 1; }
+  8%   { opacity: 1; }
+  9%   { background-position: 0 0; opacity: 0; }
+  100% { background-position: 0 0; opacity: 0; }
+}
+
+/* ═══ Lo sfondo vivo ═══════════════════════════════════════════
+   Un livello solo, dietro tutta l'app, che tiene il castello dipinto e
+   gli aloni sulle stelle.
+
+   Il castello sta qui e non su `body::before` perche' fondo e stelle
+   devono stare insieme: quello che si muove va tenuto attaccato a
+   quello sopra cui si muove, non appeso a un altro pezzo di pagina.
+   Le proprieta' dello sfondo sono quelle di sempre — taglio, centro,
+   immagine diversa sul telefono e da scrivania — e stanno in
+   `theme-mockup.css`, dove sta tutto quello che riguarda lo sfondo.
+
+   Il disegno SVG lo ricopre con lo stesso taglio (`slice` fa quello
+   che fa `background-size: cover`), quindi ogni alone resta sulla sua
+   stella a qualsiasi dimensione della finestra. */
+.mo-sfondo svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* I tre cieli seguono lo stesso interruttore degli sfondi: uno solo per
+   volta, quello dell'immagine che si sta guardando. Il quadro quadrato
+   e' il ripiego di mezzo — tablet e telefoni girati di lato. */
+.mo-stretta,
+.mo-desktop { display: none; }
+
+@media (orientation: portrait) and (max-width: 1023px) {
+  .mo-larga   { display: none; }
+  .mo-stretta { display: block; }
+}
+
+@media (min-width: 1024px) {
+  .mo-larga   { display: none; }
+  .mo-desktop { display: block; }
+}
+
+/* ── Il passaggio da un'ora all'altra ─────────────────────────
+   Il conto si rifa' ogni minuto, e in un minuto l'opacita' del quadro
+   che sta arrivando cambia di mezzo punto percentuale: nessuno lo
+   vedrebbe muoversi nemmeno senza transizione. Serve per un altro
+   caso — chi torna sulla scheda dopo tre ore, e trova il cielo
+   avanzato di parecchio: quel salto lo fa in un secondo, invece che
+   in un fotogramma. */
+.mo-primopiano,
+.mo-velo {
+  transition: opacity 1.2s var(--mo-continuo);
+}
+
+/* Il cielo cambia colore in continuo, un pelo al minuto: la transizione
+   serve solo a chi torna sulla scheda dopo tre ore e lo trova avanzato di
+   parecchio. */
+.mo-aria {
+  transition: background 1.2s var(--mo-continuo);
+}
+
+/* Sole e luna si spostano di un quarto di grado al minuto: fermarli
+   non toglie niente a nessuno, e a chi ha chiesto meno movimento
+   toglie una cosa che si muove sempre. Restano dove l'ora li mette. */
+.mo-sole,
+.mo-luna {
+  transition: opacity 1.2s var(--mo-continuo),
+              left 60s var(--mo-continuo),
+              top 60s var(--mo-continuo);
+}
+
+/* ── Le stelle ────────────────────────────────────────────────
+   Sul cielo stanno un punto fermo e un alone che si accende ogni
+   tanto, uno per stella. Il punto e' fermo apposta: il cielo e' una
+   sfumatura disegnata dal codice, senza stelle dipinte dentro,
+   quindi se lampeggiasse anche lui resterebbe vuoto per nove
+   secondi su dieci. */
+.mo-stella-punto {
+  /* Nessuna animazione: e' la stella, non il suo brillare. */
+  pointer-events: none;
+}
+
+.mo-stella {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: mo-stella;
+  animation-timing-function: var(--mo-uscita);
+  animation-iteration-count: infinite;
+  animation-delay: var(--mo-ritardo);
+}
+
+.mo-stella.a-cinque { animation-duration: var(--mo-stella-a); }
+.mo-stella.a-sette  { animation-duration: var(--mo-stella-b); }
+.mo-stella.a-dieci  { animation-duration: var(--mo-stella-c); }
+
+/* Si accende in mezzo secondo e si spegne in uno: il resto del
+   ciclo la stella e' quella dipinta, e basta. */
+@keyframes mo-stella {
+  0%   { opacity: 0; transform: scale(0.82); }
+  8%   { opacity: var(--mo-forza, 0.8); transform: scale(1); }
+  24%  { opacity: 0; transform: scale(0.86); }
+  100% { opacity: 0; transform: scale(0.82); }
+}
+
+/* ═══ Quest conclusa ═══════════════════════════════════════════
+   Quando una quest si chiude, il riquadro non sparisce di colpo:
+   resta un attimo, si accende appena, e al posto dei pulsanti
+   compare il segno di spunta che si disegna, con accanto la
+   ricompensa che quella quest ha appena messo in gioco. Poi se ne
+   va da solo. Nessun coriandolo: la conferma e' il segno. */
+.ui-quest.is-conclusa {
+  animation: mo-lampo var(--mo-lungo) var(--mo-uscita) both;
+}
+
+@keyframes mo-lampo {
+  0%   { box-shadow: inset 0 0 0 1px rgba(74, 217, 255, 0); }
+  22%  { box-shadow: inset 0 0 0 1px var(--tv-border-forte), var(--mo-alone); }
+  100% { box-shadow: inset 0 0 0 1px rgba(74, 217, 255, 0); }
+}
+
+.mo-esito {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--tv-border);
+  font-family: var(--tv-font);
+  font-size: var(--t-s);
+  letter-spacing: 0.06em;
+  color: var(--tv-primary);
+  animation: mo-comparsa var(--mo-breve) var(--mo-uscita) both;
+}
+
+@keyframes mo-comparsa {
+  from { opacity: 0; transform: translateY(var(--mo-alzata)); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Il segno si disegna: un tratto solo, da sinistra, nel tempo di un
+   gesto. E' la stessa idea delle barre del terminale — il valore
+   arriva, non appare. */
+.mo-check {
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--tv-primary);
+  stroke-width: 2.4;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  filter: drop-shadow(0 0 4px var(--tv-glow));
+}
+
+.mo-check path {
+  stroke-dasharray: 30;
+  stroke-dashoffset: 30;
+  animation: mo-tratto var(--mo-tratto) var(--mo-entrata) both;
+}
+
+@keyframes mo-tratto {
+  to { stroke-dashoffset: 0; }
+}
+
+.mo-esito-testo { color: var(--tv-bright); }
+
+/* La ricompensa entra mezzo passo dopo il segno: prima la conferma,
+   poi che cosa vale. */
+.mo-esito-premio {
+  margin-left: auto;
+  color: var(--tv-dim);
+  animation: mo-comparsa var(--mo-breve) var(--mo-uscita) var(--mo-tratto) both;
+}
+
+.mo-esito-premio b {
+  font-weight: inherit;
+  color: var(--ui-exp);
+}
+
+.mo-esito-premio i {
+  font-style: normal;
+  color: var(--ui-gold);
+}
+
+/* ═══ Accessibilita' ═══════════════════════════════════════════
+   Chi ha chiesto di fermare le animazioni le ferma tutte: la luce
+   non attraversa piu' le medaglie, le stelle restano accese di un
+   filo e ferme, il segno di spunta e' gia' disegnato quando arriva.
+   Nessuna informazione sta solo nel movimento, quindi non si perde
+   niente a spegnerlo. */
+@media (prefers-reduced-motion: reduce) {
+  .mo-medaglia::after { animation: none; opacity: 0; }
+
+  .mo-stella {
+    animation: none;
+    opacity: calc(var(--mo-forza, 0.8) * 0.45);
+    transform: none;
+  }
+
+  /* Il cielo cambia lo stesso — che ora e' non e' una decorazione —
+     ma senza scivolare da un'immagine all'altra. */
+  .mo-primopiano,
+  .mo-aria,
+  .mo-velo,
+  .mo-sole,
+  .mo-luna { transition: none; }
+
+  .ui-quest.is-conclusa { animation: none; }
+
+  .mo-esito,
+  .mo-esito-premio { animation: none; }
+
+  .mo-check path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Chi chiede piu' contrasto perde il riflesso — e' un velo di luce
+   sopra il disegno, e li' toglie leggibilita' invece di darne. */
+@media (prefers-contrast: more) {
+  .mo-medaglia::after { display: none; }
+}

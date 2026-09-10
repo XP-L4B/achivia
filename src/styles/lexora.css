@@ -1,0 +1,408 @@
+/* ═══════════════════════════════════════════════════════════════
+   LEXORA — il duello di parole
+
+   Tre schermate come l'arena: l'atrio, la partita, i traguardi (piu' la
+   classifica). Nessuna tela: qui si disegna con il testo, e il campo e'
+   una griglia di comandi.
+
+   Le superfici e i comandi nuovi — `lex-scelta`, `lex-modo`, `lex-riga` —
+   portano le tacche agli angoli: stanno negli elenchi di `terminal.css`,
+   capitolo «Gli angoli», nella taglia piccola, che e' quella dei comandi.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── La parola segreta e la griglia dei tentativi ───
+   Una casella e' un quadrato di lato fisso finche' ci sta, poi si stringe:
+   sette caselle su un telefono stretto devono restare sette caselle, non
+   diventare due righe. */
+.lex-griglia { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+
+.lex-segreta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--tv-font);
+}
+.lex-segreta-etichetta {
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+.lex-segreta-caselle { display: flex; gap: 4px; }
+.lex-segreta-conto { font-size: 0.66rem; color: var(--tv-dim); }
+
+.lex-righe { display: flex; flex-direction: column; gap: 6px; }
+.lex-riga-tentativo { display: flex; gap: 6px; flex-wrap: nowrap; }
+.lex-riga-tentativo.is-vuota { opacity: 0.5; }
+.lex-riga-persa {
+  font-family: var(--tv-font);
+  font-size: 0.7rem;
+  color: var(--tv-warn);
+  align-self: center;
+}
+
+/* La casella: il quadrato che porta una lettera e il suo colore. */
+.lex-casella {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(30px, 9vw, 44px);
+  height: clamp(30px, 9vw, 44px);
+  flex: 0 0 auto;
+  background: var(--tv-track);
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  font-family: var(--tv-font);
+  font-size: clamp(0.85rem, 3.4vw, 1.15rem);
+  line-height: 1;
+  color: var(--tv-bright);
+  text-transform: uppercase;
+}
+.lex-casella.is-segreta { background: transparent; border-style: dashed; }
+
+/* I tre esiti. Il colore non e' l'unico segno: c'e' anche il simbolo in
+   basso a destra, perche' il verde e il giallo sono esattamente i due
+   colori che un daltonico non distingue, e senza il simbolo il gioco
+   sarebbe ingiocabile per una persona su dodici fra gli uomini. */
+.lex-casella.is-verde {
+  background: #1f7a3f;
+  border-color: #2fa457;
+  color: #f2fff6;
+}
+.lex-casella.is-giallo {
+  background: #9a7d12;
+  border-color: #c9a521;
+  color: #fffbe9;
+}
+.lex-casella.is-grigio {
+  background: #24323b;
+  border-color: #33454f;
+  color: var(--tv-dim);
+}
+.lex-casella-segno {
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font-size: 0.5rem;
+  opacity: 0.75;
+}
+
+/* ─── Il tentativo che si scrive ─── */
+.lex-tentativo {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.lex-input {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-family: var(--tv-font);
+  min-width: 160px;
+}
+
+/* ─── Le lettere gia' provate ─── */
+.lex-tastiera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.lex-tastiera-riga { display: flex; gap: 3px; }
+.lex-tasto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(18px, 6vw, 26px);
+  height: clamp(20px, 6vw, 26px);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+  border: 1px solid var(--tv-border);
+  font-family: var(--tv-font);
+  font-size: 0.6rem;
+  color: var(--tv-dim);
+}
+.lex-tasto.is-verde { background: #1f7a3f; border-color: #2fa457; color: #f2fff6; }
+.lex-tasto.is-giallo { background: #9a7d12; border-color: #c9a521; color: #fffbe9; }
+.lex-tasto.is-grigio { background: #17222a; border-color: #263640; color: #46606e; }
+
+/* ─── Le parole di fine partita ─── */
+.lex-parole-finali {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--tv-font);
+  font-size: 0.76rem;
+}
+.lex-parole-finali li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--tv-surface);
+  border-left: 2px solid var(--tv-ghost);
+}
+.lex-parole-finali li.is-trovata { border-left-color: #2fa457; }
+.lex-parole-finali li.is-persa { border-left-color: var(--tv-warn); }
+.lex-parole-finali b { color: var(--tv-bright); letter-spacing: 0.08em; }
+.lex-parole-finali span { color: var(--tv-dim); }
+.lex-parole-punti { margin-left: auto; color: var(--tv-primary) !important; font-variant-numeric: tabular-nums; }
+
+/* ─── Il tabellone ─── */
+.lex-tabellone { display: flex; flex-direction: column; gap: 10px; }
+.lex-punteggi { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+.lex-punteggio {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  background: var(--tv-surface);
+  border-left: 2px solid var(--tv-ghost);
+  font-family: var(--tv-font);
+}
+.lex-punteggio.is-turno { border-left-color: var(--tv-primary); }
+.lex-punteggio-chi { font-size: 0.68rem; color: var(--tv-dim); }
+.lex-punteggio-punti { font-size: 1.35rem; line-height: 1.1; color: var(--tv-bright); font-variant-numeric: tabular-nums; }
+.lex-punteggio-sotto { font-size: 0.6rem; color: var(--tv-dim); }
+
+.lex-obiettivo {
+  margin: 0;
+  font-family: var(--tv-font);
+  font-size: 0.82rem;
+  color: var(--tv-primary);
+}
+.lex-obiettivo-etichetta {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+/* ─── L'atrio ─── */
+.lex-sezione {
+  margin: 10px 0 8px;
+  font-family: var(--tv-font);
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tv-dim);
+}
+
+.lex-bot { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+@media (max-width: 560px) { .lex-bot { grid-template-columns: 1fr; } }
+
+.lex-scelta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px;
+  text-align: left;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+.lex-scelta:hover, .lex-scelta:focus-visible { border-color: var(--tv-border-forte); background: var(--btn-fondo-su); }
+.lex-scelta:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.lex-scelta b { font-size: 0.8rem; color: var(--tv-bright); }
+.lex-scelta small { font-size: 0.65rem; color: var(--tv-dim); }
+
+.lex-elenco { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.lex-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--tv-surface);
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  font-family: var(--tv-font);
+}
+.lex-riga-chi { display: flex; flex-direction: column; gap: 2px; font-size: 0.8rem; color: var(--tv-bright); }
+/* La bandiera sta dentro la riga, non sopra: senza questo l'SVG e' un
+   blocco e manda il testo a capo. */
+.lex-riga-chi small { display: inline-flex; align-items: center; gap: 5px; font-size: 0.62rem; color: var(--tv-dim); }
+.lex-riga-azioni { display: flex; gap: 6px; }
+@media (max-width: 480px) {
+  .lex-riga { flex-direction: column; align-items: stretch; }
+}
+
+.lex-sfida-persona { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.lex-campo-scelta { display: flex; flex-direction: column; gap: 4px; min-width: 200px; }
+
+/* ─── La fine ─── */
+.lex-esito { display: flex; flex-direction: column; gap: 10px; font-family: var(--tv-font); }
+.lex-esito-titolo { margin: 0; font-size: 1.05rem; color: var(--tv-bright); }
+.lex-esito.is-persa .lex-esito-titolo { color: var(--tv-warn); }
+.lex-esito-punti { margin: 0; font-size: 2rem; line-height: 1; color: var(--tv-primary); font-variant-numeric: tabular-nums; }
+.lex-esito-azioni { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.lex-scoperte { padding: 8px 10px; background: var(--tv-surface); border-left: 2px solid var(--tv-primary); }
+.lex-scoperte-titolo { margin: 0 0 6px; font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--tv-dim); }
+.lex-scoperte ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.lex-scoperte li { display: flex; flex-direction: column; gap: 2px; font-size: 0.78rem; color: var(--tv-primary); }
+.lex-scoperte b { color: var(--tv-bright); }
+.lex-scoperta-def { color: var(--tv-dim); }
+
+/* ─── Il tutorial ─── */
+.lex-tutorial { display: flex; flex-direction: column; gap: 8px; font-family: var(--tv-font); }
+.lex-tutorial-conto { margin: 0; font-size: 0.6rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--tv-dim); }
+.lex-tutorial-titolo { margin: 0; font-size: 0.95rem; color: var(--tv-bright); }
+.lex-tutorial-testo { margin: 0; font-size: 0.82rem; line-height: 1.5; color: var(--tv-dim); }
+.lex-tutorial-azioni { display: flex; gap: 10px; margin-top: 4px; }
+
+/* ─── La scelta della lingua ───
+   La tendina e la bandiera di quello che si e' scelto, una accanto
+   all'altra: la tendina si legge, la bandiera si riconosce. */
+.lex-lingua {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.lex-lingua-scelta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 6px;
+  font-family: var(--tv-font);
+  font-size: 0.82rem;
+  color: var(--tv-bright);
+}
+.lex-bandiera { display: block; image-rendering: pixelated; }
+
+/* ─── Le due porte: da solo, o in due ───
+   Grandi e affiancate, perche' sono la scelta che viene prima di tutte le
+   altre. Quello che serve a una compare sotto solo quando la si e' scelta. */
+.lex-modi {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+@media (max-width: 560px) { .lex-modi { grid-template-columns: 1fr; } }
+
+.lex-modo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  text-align: center;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+.lex-modo:hover, .lex-modo:focus-visible { border-color: var(--tv-border-forte); background: var(--btn-fondo-su); }
+.lex-modo:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.lex-modo.is-scelto { border-color: var(--tv-primary); box-shadow: 0 0 12px var(--tv-glow); }
+.lex-modo b { font-size: 0.86rem; color: var(--tv-bright); }
+.lex-modo small { font-size: 0.66rem; color: var(--tv-dim); }
+
+/* Il passo che si apre dopo la scelta: staccato da sopra, cosi' si vede
+   che e' una conseguenza e non un terzo elenco. */
+.lex-passo {
+  padding-top: 10px;
+  border-top: 1px solid var(--tv-border);
+}
+
+
+/* ═══ La pausa fra una parola e l'altra ═══
+
+   Sopra il tavolo, non al posto suo: la griglia resta li' sotto, scurita,
+   e si vede che la partita non e' finita — e' ferma. Sul telefono si
+   appoggia allo schermo invece che alla pagina, per la stessa ragione del
+   report di The Boss: un foglio alto quanto un tabellone non si legge. */
+.lex-pausa {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(4, 7, 11, 0.8);
+  backdrop-filter: blur(3px);
+  animation: lex-pausa-entra 180ms ease-out;
+}
+@keyframes lex-pausa-entra { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .lex-pausa { animation: none; } }
+
+.lex-pausa-foglio {
+  width: min(460px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--btn-cornice) transparent;
+}
+.lex-pausa-scheda { margin-top: var(--space-2); font-style: italic; }
+
+/* ═══ La scala della prova ═══
+   Sei livelli in colonna, e quelli chiusi si vedono: sapere che sopra ce
+   n'e' un altro e' meta' del motivo per rifare quello di adesso. */
+.lex-livelli { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--space-3); }
+
+.lex-livello {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 'n nome' 'n nota' 'n conto';
+  gap: 0 12px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  background: var(--tv-vetro);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+.lex-livello:hover:not(:disabled) { border-color: var(--tv-border-forte); box-shadow: 0 0 12px var(--tv-glow); }
+.lex-livello:active:not(:disabled) { transform: translateY(1px); }
+.lex-livello:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.lex-livello:disabled { opacity: 0.45; cursor: default; }
+
+.lex-livello-n {
+  grid-area: n;
+  align-self: center;
+  min-width: 30px;
+  font-size: 1.5rem;
+  line-height: 1;
+  text-align: center;
+  color: var(--tv-dim);
+  font-variant-numeric: tabular-nums;
+}
+.lex-livello b { grid-area: nome; color: var(--tv-bright); }
+.lex-livello small { grid-area: nota; font-size: 0.64rem; color: var(--tv-dim); }
+.lex-livello .lex-livello-conto { grid-area: conto; color: var(--tv-primary); }
+
+/* Quello a cui si e' arrivati: e' il prossimo da fare, e si vede. */
+.lex-livello.is-prossimo { border-color: var(--tv-primary); }
+.lex-livello.is-prossimo .lex-livello-n { color: var(--tv-primary); }
+/* Quelli gia' passati restano aperti — si rigiocano per il record. */
+.lex-livello.is-fatto .lex-livello-n::after { content: ' ✓'; font-size: 0.7rem; }

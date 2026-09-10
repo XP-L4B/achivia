@@ -1,0 +1,457 @@
+/* Versione da scrivania.
+ *
+ * Stessa app, stesse funzioni, stesse pagine: cambia solo come sono
+ * disposte quando c'e' uno schermo orizzontale al posto di un telefono.
+ * Tutto quello che c'e' qui dentro vive in una sola media query, quindi
+ * sotto i 1024px non viene applicata nemmeno una regola: la versione da
+ * telefono resta esattamente quella di prima.
+ *
+ * Le tre mosse sono: la colonna larga 480px lascia il posto a tutta la
+ * finestra, la barra di navigazione in basso diventa una colonna a
+ * sinistra con le etichette scritte, e i contenuti che sul telefono
+ * stanno incolonnati si affiancano.
+ */
+
+@media (min-width: 1024px) {
+  :root {
+    --rail: 232px;      /* larghezza della colonna di navigazione */
+    --colonna: 1180px;  /* larghezza massima del contenuto */
+  }
+
+  /* ─── Contenitore ───────────────────────────────────────────
+     Sul telefono l'app e' una colonna di 480px centrata; qui prende
+     tutta la finestra e a limitare la riga di testo ci pensa la colonna
+     dei contenuti piu' sotto. */
+  #root { max-width: none; }
+
+  /* ─── Sfondo ────────────────────────────────────────────────
+     Da scrivania il castello ha un disegno suo, in sedici noni: il quadro
+     quadrato, allargato a tutta la finestra, veniva ingrandito parecchio e
+     mostrava solo la parte centrale. Qui c'e' l'intera valle — il castello
+     piu' lontano, i borghi ai lati, le montagne e molto piu' cielo — e le
+     stelle hanno le loro coordinate (`SfondoVivo`). Quale delle quattro
+     ore del giorno si veda lo dice `sfondi.css`.
+
+     Il velo fisso che stava qui non serve piu': ce n'e' uno solo, e
+     l'opacita' gliela da' l'ora. Su uno schermo largo pero' i pannelli
+     sono piu' piccoli rispetto al quadro e il cielo pesa di piu', quindi
+     anche di notte un po' di velo ci vuole: questo lo aggiunge, fisso,
+     sotto quello che cambia. */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(6, 8, 16, 0.26) 0%, rgba(6, 8, 16, 0.52) 100%);
+    pointer-events: none;
+  }
+
+  /* Il nome dell'area sotto il marchio serve solo dove la barra non lo
+     dice: qui la colonna a sinistra porta le etichette scritte, e leggerlo
+     due volte a un palmo di distanza e' rumore. */
+  .ui-marchio-area { display: none; }
+
+  /* ─── Navigazione: da barra in basso a colonna a sinistra ───
+     Con il mouse la barra in fondo allo schermo e' lontana e le icone
+     sole sono un indovinello: qui la navigazione sta sempre in vista sul
+     lato, e ogni voce porta scritto dove va. */
+  .px-nav.px-rail {
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    transform: none;
+    width: var(--rail);
+    max-width: none;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 22px 14px;
+    border-top: 0;
+    border-right: 3px solid var(--px-edge);
+    box-shadow: 6px 0 0 rgba(0, 0, 0, 0.35);
+  }
+
+  .px-rail .px-nav-item {
+    flex: 0 0 auto;
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 13px 14px;
+    border-radius: var(--ui-radius);
+  }
+
+  .px-rail .px-nav-item .px-nav-icon { width: 26px; height: 26px; }
+
+  /* Sul telefono le etichette sono nascoste e parla l'icona; qui c'e'
+     spazio per il nome della sezione. */
+  .px-rail .px-nav-label {
+    display: block;
+    font-family: var(--ui-pixel);
+    font-size: var(--t-xs);
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .px-rail .px-nav-item:hover { background: rgba(255, 255, 255, 0.08); opacity: 1; }
+
+  .px-rail .px-nav-item.active {
+    background: rgba(255, 255, 255, 0.14);
+    box-shadow: inset 3px 0 0 var(--px-gold);
+  }
+
+  /* Il marchio, che sul telefono e' la voce centrale, qui fa da
+     intestazione della colonna. */
+  .px-rail .px-nav-item.brand {
+    order: -1;
+    margin-bottom: 14px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.16);
+    border-radius: 0;
+  }
+
+  .px-rail .px-nav-item.brand .px-nav-icon { width: 40px; height: 40px; }
+
+  .px-rail .px-nav-item.brand .px-nav-label {
+    font-size: var(--t-l);
+    letter-spacing: 1px;
+  }
+
+  /* L'insegna punta al profilo come la voce "Profilo": senza questo si
+     accenderebbero tutte e due sulla stessa pagina. */
+  .px-rail .px-nav-item.brand.active {
+    background: none;
+    box-shadow: none;
+  }
+
+  /* L'uscita scende in fondo alla colonna: non e' una destinazione come le
+     altre, e in mezzo alle sezioni si clicca per sbaglio. Oggi ce l'ha solo
+     il negozio, che un'insegna non ce l'ha — se un giorno le due cose si
+     incontrassero, lo spazio si dividerebbe fra loro e andrebbe deciso chi
+     sta sotto. */
+  .px-rail .px-nav-item.esce {
+    margin-top: auto;
+    color: var(--ui-alert-testo);
+  }
+
+  /* In fondo alla colonna, staccata dalle voci: l'insegna
+     dell'organizzazione di chi sta guardando — il logo caricato o lo
+     stemma disegnato. Non e' una voce di menu e non porta da nessuna
+     parte: dice di chi e' la casa in cui si sta. `margin-top: auto` la
+     spinge in fondo, sotto tutte le voci. */
+  .px-rail-insegna {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: auto;
+    padding: 14px 14px calc(4px + env(safe-area-inset-bottom, 0px));
+    border-top: 2px solid rgba(255, 255, 255, 0.16);
+  }
+
+  .px-rail-insegna .emblema { width: 34px; height: 34px; }
+
+  .px-rail-insegna-nome {
+    font-family: var(--ui-pixel);
+    font-size: var(--t-xs);
+    line-height: 1.4;
+    color: var(--ui-dim);
+    /* Un nome lungo non deve allargare la colonna ne' uscirne. */
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ─── Colonna dei contenuti ─────────────────────────────────
+     Le pagine restano quelle: qui si limita la larghezza della riga e si
+     centra il blocco, che a tutto schermo diventerebbe illeggibile. */
+  .app-main.with-rail {
+    padding-left: var(--rail);
+    padding-bottom: 0;
+  }
+
+  .app-main,
+  .app-page { align-items: center; }
+
+  .app-main > *,
+  .app-page > * {
+    width: 100%;
+    max-width: var(--colonna);
+  }
+
+  /* Accesso e registrazione: un modulo largo un metro non si compila
+     volentieri, quindi la colonna resta stretta. */
+  .auth-screen.app-main > * { max-width: 560px; }
+
+  /* La schermata d'accesso fa eccezione: accanto al modulo c'e' la
+     storia, e due colonne vogliono la larghezza di due colonne. Il
+     modulo pero' resta stretto come prima — e' la storia a prendersi
+     lo spazio che avanza. */
+  .auth-screen.app-main > .auth-con-storia { max-width: 940px; }
+
+  .auth-con-storia {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    align-items: start;
+    gap: 36px;
+  }
+
+  .auth-colonna {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-5);
+  }
+
+  /* Da scrivania la storia e' gia' aperta e non c'e' niente da
+     invitare: resta la freccia, per chi volesse chiuderla. */
+  .storia {
+    max-width: none;
+    padding: 24px 26px;
+  }
+
+  .storia-testa {
+    margin: -24px -26px;
+    padding: 24px 26px;
+  }
+
+  .storia-invito { display: none; }
+
+  /* Il corpo diventa due colonne: la compagnia in fila di lato, il
+     racconto accanto. */
+  .storia[open] .storia-corpo {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 22px;
+    margin-top: 20px;
+  }
+
+  .storia-compagnia {
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .storia-avatar { width: 68px; height: 68px; }
+
+  /* Di fianco il gradino non serve: la fila e' verticale, e a spostarsi
+     e' la larghezza. */
+  .storia-compagnia .storia-avatar:nth-child(2) {
+    width: 78px;
+    height: 78px;
+    margin-bottom: 0;
+  }
+
+  .storia-titolo { font-size: 2rem; }
+
+  /* Il marchio in cima alla pagina qui e' doppio: c'e' gia' in testa alla
+     colonna di navigazione. Se ne va tutta la riga, insegna compresa:
+     nascondendo solo la scritta, l'insegna restava sola in cima alla
+     colonna dei contenuti — ventisei pixel senza niente attorno, che dalla
+     pagina del dipendente non si vedevano nemmeno. Adesso sta in fondo
+     alla colonna di sinistra. */
+  .app-main.with-rail .ui-marchio-riga { display: none; }
+
+  .app-page .ui-wordmark,
+  .app-main.with-nav .ui-wordmark { padding-left: 4px; font-size: var(--t-marchio-l); }
+
+  .page { padding: var(--space-6) 24px var(--space-8); gap: var(--space-5); }
+
+  /* ─── Finestre ──────────────────────────────────────────────
+     Le misure delle finestre sono nate su un telefono, dove seicentoventi
+     pixel sono tutto lo schermo. Su una scrivania sono un francobollo in
+     mezzo al vuoto, e la scheda di una persona ci sta dentro peggio di
+     tutte: dentro c'e' il suo Skill Tree, che da sedici competenze e'
+     passato a centoventidue.
+
+     La finestra normale e quella di conferma restano piccole apposta —
+     una domanda larga mille pixel non si legge, si scandaglia — ma quella
+     larga prende quasi tutta la finestra, e sale a novantadue centesimi
+     dell'altezza perche' quello che ci si guarda dentro e' un elenco. */
+  .ui-dialog { max-width: 560px; }
+  .ui-dialog.is-stretta { max-width: 460px; }
+  .ui-dialog.is-larga { max-width: min(1240px, 94vw); max-height: 92vh; }
+
+  /* ─── Lo Skill Tree ─────────────────────────────────────────
+     Quattordici rami incolonnati erano una striscia lunga due metri, e per
+     arrivare all'ultimo bisognava scorrere tutti gli altri. Qui i rami si
+     affiancano — due, tre o quattro secondo lo spazio — e ognuno resta un
+     blocco intero: `break-inside` impedisce che un ramo cominci in fondo a
+     una colonna e finisca in cima a quella dopo, che e' il modo piu' rapido
+     di rendere illeggibile una mappa.
+
+     Le colonne al posto della griglia perche' i rami sono alti in modo
+     diverso — le Lingue sono quattordici, l'Ambiente tre — e una griglia
+     avrebbe allineato le righe lasciando buchi grandi come un ramo. */
+  .skill-tree {
+    display: block;
+    columns: 3 380px;
+    column-gap: 18px;
+    padding: 0 24px 8px;
+  }
+
+  .skill-branch {
+    break-inside: avoid;
+    margin-bottom: 18px;
+    padding: 18px;
+  }
+
+  /* Le medaglie stanno piu' larghe: a centoventidue competenze la
+     differenza fra sei per riga e quattro e' un metro di scorrimento. */
+  .skill-nodes {
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 18px 12px;
+  }
+
+  .skill-branch-head h3 { font-size: var(--t-l); }
+  .skill-node-name { font-size: var(--t-s); line-height: 1.6; }
+
+  /* La griglia delle medaglie da scegliere quando si crea una competenza:
+     centoventi disegni in una finestra di trecento pixel sono venti righe
+     dentro una feritoia. */
+  .badge-griglia {
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    max-height: 420px;
+  }
+
+  /* I moduli restano stretti ma centrati nella colonna. */
+  .app-main .form,
+  .app-page .form { margin-inline: auto; }
+
+  /* ─── Titoli e pannelli ─────────────────────────────────────
+     Piu' aria e caratteri leggermente piu' grandi: a 60-70 cm di distanza
+     il pixel piccolo si legge peggio che a un palmo dal viso. */
+  .ui-title {
+    margin: 22px 24px 18px;
+    padding: 20px 24px;
+    font-size: var(--t-2xl);
+  }
+
+  /* Il "?" segue la pillola, che qui ha margini e imbottitura maggiori:
+     senza questo si troverebbe a cavallo del bordo invece che dentro. */
+  .ui-title-riga .ui-help { top: 18px; right: 36px; }
+
+  .ui-panel { padding: 22px 24px; }
+
+  /* ─── Riquadri ──────────────────────────────────────────────
+     Da tre per riga a sei: la fila di scorciatoie sta tutta in vista senza
+     far scorrere la pagina. */
+  .ui-tiles {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 18px;
+    padding: 0 24px;
+  }
+
+  .ui-tile {
+    min-height: 152px;
+    padding: 18px 10px 16px;
+    font-size: var(--t-s);
+  }
+
+  /* Qui il disegno del negozio e' largo 72px invece di 56, quindi la scritta
+     che porta dentro si vede alta 11 pixel: l'etichetta lo segue. */
+  .ui-tile-label { font-size: 1.5rem; }
+
+  .ui-tile img,
+  .ui-tile > svg { width: 72px; height: 72px; }
+
+  .ui-back-row { justify-content: flex-start; padding: 28px 24px 36px; }
+
+  /* Un pulsante solo non ha motivo di essere largo quanto la finestra. */
+  .ui-tiles.one {
+    grid-template-columns: 260px;
+    justify-content: start;
+  }
+
+  .ui-tiles.pairs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  /* Le schede del marketplace: da due per riga a quattro. */
+  .ui-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  /* ─── Profilo: la scheda a sinistra, le scorciatoie nello spazio accanto ──
+     Sul telefono i quattro blocchi stanno incolonnati. Qui la scheda del
+     personaggio — nome, avatar, terminale STATUS — e' alta quasi cinquecento
+     pixel, mentre la fascia delle competenze e' un pannello basso: lasciando
+     disporre i blocchi da soli, accanto all'avatar restava un vuoto grande
+     quanto mezza scheda.
+
+     Quel vuoto lo riempiono i sei riquadri (Quest, Dati, Shop, La mia org,
+     DM, Notifiche), che stanno sotto alle competenze e a fianco dell'avatar:
+     tre per riga, due righe, alte insieme quanto la scheda. Gli achievement
+     — una vetrina di medaglie piu' un elenco, cioe' il blocco che dalla
+     larghezza ci guadagna — passano sotto, su tutte e due le colonne. */
+  .pixel-profile {
+    display: grid;
+    grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    align-items: start;
+    justify-content: center;
+    gap: 28px;
+    padding: 24px;
+  }
+
+  /* Ogni blocco al suo posto invece che affidato all'ordine di comparsa: sono
+     quattro, ognuno con un'altezza sua, e la disposizione automatica li
+     incolonna a coppie senza sapere quale sta bene accanto a quale. */
+  .pixel-profile > .ui-profile-card { grid-column: 1; grid-row: 1 / 3; }
+  .pixel-profile > .profile-skills  { grid-column: 2; grid-row: 1; }
+  .pixel-profile > .ui-tiles        { grid-column: 2; grid-row: 2; }
+  .pixel-profile > .ach-section     { grid-column: 1 / -1; grid-row: 3; }
+
+  /* La scheda scorre con la pagina come tutto il resto.
+     Era stata ancorata in cima — "resta in vista mentre si scorre il resto" —
+     quando il profilo aveva due soli blocchi: la scheda a sinistra e i
+     riquadri a destra, un'unica riga in cui la scheda non poteva incontrare
+     niente perche' sotto non c'era niente. Poi sono arrivate le competenze e
+     gli achievement: le righe sono diventate due, e sotto alla scheda ora c'e'
+     un'altra sezione. Ancorata, la scheda le passa sopra invece che scorrere
+     con lei — e passa sopra davvero, perche' un elemento posizionato si
+     disegna al di sopra di quelli che non lo sono. */
+
+  .pixel-profile .ui-tiles { grid-template-columns: repeat(3, 1fr); }
+
+  /* ─── Elenchi su due colonne ────────────────────────────────
+     Membri, quest e richieste: sullo schermo orizzontale ci stanno due
+     righe affiancate, e si vede il doppio senza scorrere. */
+  .ui-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 0 16px;
+    padding: 0 24px var(--space-6);
+  }
+
+  /* Dentro la griglia i margini laterali delle righe sono di troppo: allo
+     spazio fra le colonne pensa il `gap`. */
+  .ui-list > * {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  /* Il messaggio di elenco vuoto occupa la riga intera. */
+  .ui-list > .empty-state { grid-column: 1 / -1; }
+
+  /* ─── Rifiniture ────────────────────────────────────────────
+     Col mouse c'e' il passaggio del puntatore, che sul telefono non
+     esiste: le superfici cliccabili si sollevano appena. */
+  .ui-member {
+    transition: transform 0.1s steps(2), background 0.1s;
+  }
+
+  .ui-member:hover { transform: translateY(-2px); }
+
+  .ui-tile:hover { transform: translateY(-3px); }
+}
+
+/* Chi tiene ferme le animazioni non vuole nemmeno questi sollevamenti. */
+@media (min-width: 1024px) and (prefers-reduced-motion: reduce) {
+  .ui-member,
+  .ui-tile { transition: none; }
+
+  .ui-member:hover,
+  .ui-tile:hover { transform: none; }
+}

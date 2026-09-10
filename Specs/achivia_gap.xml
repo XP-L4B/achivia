@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Achivia — Stato di avanzamento e divario funzionale
+  Fonti: "XP-L4B - Achivia (1).docx" (analisi funzionale v1.0),
+         "pianificazione sviluppo ACHIVIA.docx" (piano di consegna),
+         Specs/achivia_spec.xml, Specs/achivia_navigation.xml, codice del repo.
+  Scopo: elencare cosa manca alla consegna e registrare le decisioni prese,
+         così che i punti "da definire" dei documenti non restino aperti.
+  Aggiornato: 2026-08-20
+-->
+<achivia_gap version="1.0" aggiornato="2026-08-20">
+
+  <consegna deadline="2026-09-23" giorni_residui="34" fonte="pianificazione sviluppo ACHIVIA.docx">
+    <perimetro>Webapp. Le app mobile iOS e Android sono successive alla prima consegna.</perimetro>
+  </consegna>
+
+  <!-- =========================================================
+       BLOCCANTE
+  ========================================================== -->
+  <bloccante id="build_rotto" gravita="critica" stato="risolto" risolto_il="2026-08-20">
+    <descrizione>
+      Il progetto non compilava: mancava il file di navigazione (src/router.jsx),
+      importato dall'entry point, e con esso tutte le pagine delle aree manager
+      e dipendente.
+    </descrizione>
+    <risoluzione>
+      Router ricostruito dal grafo in achivia_navigation.xml e pagine mancanti
+      riscritte sopra le funzioni gia' presenti in src/data/db.js.
+    </risoluzione>
+  </bloccante>
+
+  <bloccante id="pubblicazione_sorgenti" gravita="alta" stato="risolto" risolto_il="2026-08-20">
+    <descrizione>
+      Il sito pubblicato restava bianco: GitHub Pages serviva il repository cosi'
+      com'e', quindi il browser riceveva src/main.jsx senza saperlo eseguire.
+    </descrizione>
+    <risoluzione>
+      Workflow che compila con Vite e pubblica dist/ a ogni push su main, con la
+      sorgente di Pages spostata su GitHub Actions.
+    </risoluzione>
+  </bloccante>
+
+  <!-- =========================================================
+       DECISIONI PRESE — chiudono i punti "da definire" dei documenti
+  ========================================================== -->
+  <decisioni data="2026-08-20">
+
+    <decisione id="limite_versione_gratuita" stato="chiusa">
+      <questione>
+        L'analisi funzionale indica 5 utenti nella versione gratuita, il deck commerciale 3.
+        Specs/achivia_spec.xml segnalava il conflitto come "da riconciliare".
+      </questione>
+      <esito>5 utenti per organizzazione.</esito>
+      <nota>Il limite va tenuto in un unico punto di configurazione, non ripetuto nelle pagine.</nota>
+    </decisione>
+
+    <decisione id="pagamento_crediti" stato="chiusa">
+      <questione>
+        L'acquisto crediti da parte dell'Admin è una transazione reale, ma l'analisi
+        funzionale lasciava il servizio di pagamento "da definire": mancava cioè
+        l'indicazione di chi incassa materialmente il denaro.
+      </questione>
+      <esito>Stripe come fornitore di pagamento.</esito>
+      <esito_alternativo>Bonifico bancario come modalità alternativa.</esito_alternativo>
+      <nota>
+        Il bonifico non si concilia da solo: l'accredito dei crediti sul portafoglio
+        dell'organizzazione resta un'azione manuale finché l'incasso non è verificato.
+      </nota>
+    </decisione>
+
+    <decisione id="origine_presenze" stato="chiusa">
+      <questione>
+        I KPI prevedono "assenze medie nel periodo" e "giorni di presenza consecutivi",
+        ma nessun documento indicava da dove provenga il dato: non esiste timbratura
+        né integrazione con un gestionale delle presenze.
+      </questione>
+      <esito>
+        Si introduce l'appello giornaliero come funzione dell'app: è l'appello a produrre
+        il dato di presenza e assenza da cui derivano i due indicatori.
+      </esito>
+      <esito id="chi_esegue">Lo esegue il Manager sui propri Dipendenti.</esito>
+      <esito id="quando">Entro la fine della giornata.</esito>
+      <esito id="giorni_non_lavorativi">
+        Un pulsante "giorno off" marca la giornata come non lavorativa: ferie, permessi
+        e festivi non entrano quindi nel conteggio delle assenze.
+      </esito>
+    </decisione>
+
+    <decisione id="export_dati" stato="chiusa">
+      <questione>L'analisi funzionale prevedeva un export in formato Excel.</questione>
+      <esito>L'export è in JSON o XML al posto di Excel.</esito>
+      <nota>Resta collocato nella wave 2, come indicato dai documenti di origine.</nota>
+    </decisione>
+
+    <decisione id="badge_e_skilltree" stato="chiusa">
+      <questione>
+        I documenti prevedevano sia badge grafici collezionabili sull'avatar sia,
+        nel piano di sviluppo, uno skill tree di competenze soft e tecniche.
+      </questione>
+      <esito>I badge collezionabili escono dal perimetro. Resta lo skill tree.</esito>
+      <nota>
+        I mockup delle schermate mostrano "Badges" e "Badges history": la decisione
+        di tenerli fuori è stata confermata anche dopo averli visti, quindi quelle
+        parti dei mockup non vanno realizzate.
+      </nota>
+    </decisione>
+
+    <decisione id="canale_notifiche" stato="chiusa">
+      <questione>
+        L'analisi funzionale prevedeva che i messaggi della chat interna arrivassero
+        al destinatario anche via email.
+      </questione>
+      <esito>
+        Niente email: si realizza un sistema di notifiche interno all'app, che avvisa
+        l'utente dentro Achivia senza dipendere da un servizio di posta esterno.
+      </esito>
+    </decisione>
+
+    <decisione id="branding_marketplace" stato="chiusa">
+      <questione>
+        Caricamento del logo aziendale da parte dell'Admin e opzione
+        "Brandizza Marketplace" condizionata al logo caricato.
+      </questione>
+      <esito>Entrambe escono dal perimetro.</esito>
+    </decisione>
+
+  </decisioni>
+
+  <!-- =========================================================
+       FUORI PERIMETRO — non vanno sviluppati né stimati
+  ========================================================== -->
+  <fuori_perimetro>
+    <voce id="badge_collezionabili" fonte="XP-L4B §4.3">Badge grafici assegnati dal Manager e mostrati sull'avatar.</voce>
+    <voce id="upload_logo" fonte="XP-L4B §3">Caricamento, visione ed eliminazione del logo aziendale.</voce>
+    <voce id="brandizza_marketplace" fonte="XP-L4B §3">Brandizzazione degli articoli del marketplace con il logo.</voce>
+  </fuori_perimetro>
+
+  <!-- =========================================================
+       COSA MANCA
+       stato: assente | parziale | rinviato
+  ========================================================== -->
+  <mancante>
+
+    <area nome="Accesso e organizzazioni">
+      <voce id="bilingue" stato="assente" priorita="alta">
+        <descrizione>Italiano e inglese dal primo rilascio.</descrizione>
+        <situazione>Non esiste alcuna gestione delle lingue: i testi sono scritti in italiano dentro le pagine.</situazione>
+        <nota>È il requisito che costa di più se aggiunto in fondo: ogni pagina scritta senza dizionario è lavoro da rifare.</nota>
+      </voce>
+      <voce id="ruoli_organizzazione_privata" stato="assente" priorita="media">
+        <descrizione>Per famiglie e gruppi i ruoli sono Admin, presidente, membro.</descrizione>
+        <situazione>Sono previsti solo i tre ruoli aziendali.</situazione>
+      </voce>
+      <voce id="blocco_dopo_5_tentativi" stato="parziale" priorita="media">
+        <descrizione>Blocco automatico dell'account dopo 5 tentativi di accesso errati, con sblocco e reset password.</descrizione>
+        <situazione>La schermata di account bloccato esiste, ma i tentativi non vengono contati: nessuno può raggiungerla.</situazione>
+      </voce>
+    </area>
+
+    <area nome="Gamification e avatar">
+      <voce id="avatar_componibile" stato="assente" priorita="media">
+        <descrizione>Personalizzazione avatar per sesso, colore della pelle, copricapo, top, bottom, scarpe e arma.</descrizione>
+        <situazione>Sono disponibili sette personaggi interi da scegliere, non pezzi da comporre.</situazione>
+      </voce>
+      <voce id="skill_tree" stato="assente" priorita="media">
+        <descrizione>Skill tree delle competenze soft e tecniche, alimentato dal Manager.</descrizione>
+        <situazione>Mai progettato: il piano lo cita in una riga, l'analisi funzionale non lo contiene.</situazione>
+        <da_definire>Quali competenze compongono l'albero, come si sbloccano i rami e chi le assegna.</da_definire>
+      </voce>
+    </area>
+
+    <area nome="Quest e progetti">
+      <voce id="pagine_quest" stato="parziale" priorita="alta">
+        <descrizione>Quest principali, side quest e istanze di gruppo, con accettazione e rifiuto motivato.</descrizione>
+        <situazione>La logica dei dati è presente; mancano le schermate, che non sono nel repo.</situazione>
+      </voce>
+      <voce id="timer_scadenza" stato="assente" priorita="bassa">
+        <descrizione>Visualizzazione opzionale del conto alla rovescia in formato hh:mm:ss accanto alla scadenza.</descrizione>
+        <situazione>Nelle impostazioni admin esiste un comando che non produce alcun effetto.</situazione>
+      </voce>
+    </area>
+
+    <area nome="Presenze">
+      <voce id="appello_giornaliero" stato="assente" priorita="alta">
+        <descrizione>
+          Appello giornaliero: è la funzione che registra chi è presente e chi è assente,
+          e costituisce la sorgente dei KPI di assenza e di presenza consecutiva.
+        </descrizione>
+        <situazione>Non esiste. Gli indicatori di analytics leggono oggi un dato che nessuno scrive.</situazione>
+        <regole>
+          <regola>Lo compila il Manager sui propri Dipendenti, entro la fine della giornata.</regola>
+          <regola>Un pulsante "giorno off" marca la giornata come non lavorativa e la esclude dal conteggio delle assenze.</regola>
+        </regole>
+      </voce>
+    </area>
+
+    <area nome="Collaborazione">
+      <voce id="chat_interna" stato="assente" priorita="alta">
+        <descrizione>Messaggistica diretta fra utenti dell'organizzazione.</descrizione>
+        <situazione>L'icona dei messaggi nel profilo rimanda a una pagina che non esiste; i messaggi non sono previsti fra i dati.</situazione>
+      </voce>
+      <voce id="sistema_notifiche" stato="parziale" priorita="media">
+        <descrizione>
+          Sistema di notifiche interno che avvisa l'utente dentro l'app: nuovo messaggio,
+          quest in scadenza, quest da approvare, richiesta di aiuto.
+        </descrizione>
+        <situazione>
+          Le notifiche esistono come dato e come pagina, ma coprono solo le quest:
+          non ci sono avvisi per i messaggi ne' un punto unico che li raccolga tutti.
+        </situazione>
+      </voce>
+    </area>
+
+    <area nome="Dati e reportistica">
+      <voce id="kpi_performance" stato="parziale" priorita="alta">
+        <descrizione>Indicatori di performance e di crediti per dipendente, team e organizzazione.</descrizione>
+        <situazione>La pagina esiste e mostra gli indicatori, ma parte dei valori non ha una sorgente; si completa con l'appello giornaliero.</situazione>
+      </voce>
+      <voce id="diagrammi_comparativi" stato="assente" priorita="media">
+        <descrizione>Diagrammi sovrapponibili per confrontare dipendente, team e totale aziendale.</descrizione>
+        <situazione>Nessuna rappresentazione grafica dei dati è presente nel progetto.</situazione>
+      </voce>
+      <voce id="performance_review" stato="assente" priorita="media">
+        <descrizione>Sezione di performance review.</descrizione>
+        <situazione>Compare come voce nel grafo di navigazione, ma nessun documento descrive cosa contenga.</situazione>
+        <da_definire>Contenuto, periodicità e chi la compila.</da_definire>
+      </voce>
+      <voce id="export_json_xml" stato="rinviato" priorita="bassa" wave="2">
+        <descrizione>Export dei dati dell'utente in JSON o XML: quest in corso e passate, livello raggiunto, crediti.</descrizione>
+        <situazione>Rinviato alla wave 2 dai documenti di origine.</situazione>
+      </voce>
+    </area>
+
+    <area nome="Marketplace e amministrazione">
+      <voce id="backoffice_catalogo" stato="assente" priorita="alta">
+        <descrizione>Portale web riservato all'Admin per gestire il catalogo: foto, descrizione e costo in crediti.</descrizione>
+        <situazione>Non esiste.</situazione>
+      </voce>
+      <voce id="vetrina_prodotti" stato="parziale" priorita="media">
+        <descrizione>Vetrina degli articoli e acquisto con i crediti guadagnati.</descrizione>
+        <situazione>La vetrina mostra tre articoli fissi scritti nel progetto, non un catalogo gestibile.</situazione>
+      </voce>
+      <voce id="acquisto_crediti_stripe" stato="assente" priorita="alta">
+        <descrizione>Acquisto crediti da parte dell'Admin tramite Stripe, con bonifico bancario come alternativa.</descrizione>
+        <situazione>La pagina di acquisto esiste ma non è collegata ad alcun incasso.</situazione>
+      </voce>
+      <voce id="gratuita_e_premium" stato="parziale" priorita="media">
+        <descrizione>Versione gratuita con pubblicità e limite di 5 utenti per organizzazione, con passaggio a premium dall'app.</descrizione>
+        <situazione>Il comando "passa a premium" non produce alcun effetto e i banner non esistono.</situazione>
+      </voce>
+      <voce id="eliminazione_account" stato="parziale" priorita="media">
+        <descrizione>
+          Eliminazione account con scelta fra restare visibile ad altre organizzazioni
+          e anonimizzazione, conservando lo storico per i report.
+        </descrizione>
+        <situazione>L'eliminazione cancella l'utente e basta: non c'è né la scelta né l'anonimizzazione.</situazione>
+      </voce>
+    </area>
+
+    <area nome="Fondamenta">
+      <voce id="dati_condivisi" stato="assente" priorita="critica" fuori_documenti="true">
+        <descrizione>Archivio dei dati condiviso fra gli utenti dell'organizzazione.</descrizione>
+        <situazione>
+          Ogni utente ha i propri dati nel proprio browser: il Manager non vede le quest
+          del Dipendente perché risiedono su un altro dispositivo. Le credenziali sono
+          inoltre in chiaro nei dati di partenza.
+        </situazione>
+        <impatto>
+          Senza questo, quest, crediti, messaggi e appello non funzionano fra utenti diversi
+          e l'app resta una dimostrazione a utente singolo.
+        </impatto>
+      </voce>
+    </area>
+
+  </mancante>
+
+  <!-- =========================================================
+       PUNTI ANCORA APERTI
+  ========================================================== -->
+  <da_definire>
+    <punto rif="skill_tree">Struttura dell'albero delle competenze e regole di sblocco.</punto>
+    <punto rif="performance_review">Contenuto e periodicità della sezione.</punto>
+    <punto rif="acquisto_crediti_stripe">Come viene verificato l'incasso del bonifico prima di accreditare i crediti.</punto>
+  </da_definire>
+
+</achivia_gap>

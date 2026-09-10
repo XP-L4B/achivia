@@ -1,0 +1,631 @@
+/* ─── Variables ─────────────────────────────────────────── */
+:root {
+  /* ─── I nomi di prima ───
+     Questi erano i colori di quando l'app era chiara: testo quasi nero su
+     fondo bianco. Il tema e' cambiato — sfondo fotografico e vetro scuro —
+     ma i nomi sono rimasti scritti in una ventina di punti, e li' hanno
+     continuato a dipingere di grigio scuro sopra il nero. Misurati sul
+     vetro: `--text` a 1,2:1, `--primary` a 2,2, `--text-muted` a 3,0.
+     Praticamente invisibili.
+     Adesso puntano ai colori del tema di adesso. Non e' un tappabuchi: e'
+     che un nome deve dire la stessa cosa dovunque lo si scriva, e "il testo
+     smorzato" oggi e' quel grigio chiaro, non quello scuro. */
+  --primary:        #4ad9ff;
+  --primary-light:  #d6f4ff;
+  --primary-dark:   #29b6e8;
+
+  --text:           #ffffff;
+  --text-muted:     #b9bdc4;
+  --text-subtle:    #95999e;
+
+  --bg:             #050a10;
+  --bg-subtle:      #0a1a26;
+
+  --border:         rgba(74, 217, 255, 0.26);
+  --border-strong:  rgba(74, 217, 255, 0.55);
+
+  /* Un solo rosso in tutta l'app: questo resta come nome storico e punta
+     a quello del tema, cosi' non ci sono due rossi che si somigliano. */
+  --danger:         #e01b1b;
+  --success:        #22c55e;
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --radius-sm:  6px;
+  --radius:     8px;
+  --radius-lg:  12px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Palette pixel-art (condivisa tra profilo e navbar) */
+  --px-bg-1:    #241844;
+  --px-bg-2:    #160e2e;
+  --px-panel:   #2c2056;
+  --px-panel-2: #20163f;
+  --px-edge:    #0c0820;
+  --px-accent:  #8b5cf6;
+  --px-accent-d:#5b3aa6;
+  --px-gold:    #f5c518;
+  --px-green:   #4ade80;
+  --px-text:    #ece7ff;
+  --px-muted:   #a99fd6;
+}
+
+/* ─── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Base ───────────────────────────────────────────────── */
+body {
+  font-family: var(--font);
+  /* La misura di riferimento: e' su questa che si contano i rem della scala,
+     non e' un gradino della scala. */
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text);
+  background: #ebebf0;        /* desktop: area fuori dal frame */
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#root {
+  max-width: 480px;
+  min-height: 100svh;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+/* Bordo "cornice" solo su viewport desktop */
+@media (min-width: 481px) {
+  #root {
+    border-inline: 1px solid var(--border);
+  }
+}
+
+/* ─── Typography ─────────────────────────────────────────── */
+h1 { font-size: var(--t-5xl);  font-weight: 700; line-height: 1.2; color: var(--text); }
+h2 { font-size: var(--t-3xl);  font-weight: 700; line-height: 1.3; color: var(--text); }
+h3 { font-size: var(--t-2xl);  font-weight: 600; color: var(--text); }
+h4 { font-size: var(--t-xl);  font-weight: 600; color: var(--text); }
+p  { color: var(--text-muted); }
+
+a  { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ─── Form elements ──────────────────────────────────────── */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: var(--t-2xl);          /* 16px: previene lo zoom su iOS */
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.9rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s;
+  -webkit-appearance: none;  /* rimuove lo stile nativo iOS */
+  appearance: none;
+}
+
+/* Checkbox e radio: ripristina l'aspetto nativo (la regola sopra le rendeva
+   riquadri a tutta larghezza) */
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  padding: 0;
+  -webkit-appearance: auto;
+  appearance: auto;
+  accent-color: var(--primary);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-subtle);
+}
+
+/* ─── Buttons ────────────────────────────────────────────── */
+button {
+  font-family: inherit;
+  font-size: var(--t-2xl);
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: none;
+  padding: 0.7rem 1.25rem;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── Tab navigation ─────────────────────────────────────── */
+.tab-nav {
+  display: flex;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  bottom: 0;
+  /* Safe area iOS (notch / Dynamic Island / home indicator) */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.tab-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;           /* touch target ≥ 44px */
+  padding: 0.5rem 0.25rem;
+  text-align: center;
+  text-decoration: none;
+  font-size: var(--t-m);
+  color: var(--text-muted);
+  border-top: 2px solid transparent;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab-link:hover { text-decoration: none; color: var(--text-muted); }
+
+.tab-link.active {
+  color: var(--primary);
+  font-weight: 700;
+  border-top-color: var(--primary);
+}
+
+/* ─── Utility classes ────────────────────────────────────── */
+
+/* Layout */
+.page         { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); flex: 1; }
+.page-center  { padding: var(--space-8) var(--space-6); display: flex; flex-direction: column; align-items: center; gap: var(--space-5); flex: 1; }
+.section      { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-6); }
+.card         { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: var(--space-5); }
+.card-row     { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-4) var(--space-5); border: 1px solid var(--border); border-radius: var(--radius-lg); text-decoration: none; color: inherit; }
+.card-row:hover { text-decoration: none; background: var(--bg-subtle); }
+.divider      { border: none; border-top: 1px solid var(--border); }
+.empty-state  { padding: var(--space-5); background: var(--bg-subtle); border-radius: var(--radius); color: var(--text-subtle); font-size: var(--t-xl); text-align: center; }
+
+/* Empty-state in stile pixel (pagine con sfondo pixel) */
+.pixel-bg .empty-state {
+  background: var(--px-panel-2);
+  border: 3px dashed var(--px-edge);
+  border-radius: 0;
+  box-shadow: 0 4px 0 var(--px-edge);
+  color: var(--px-muted);
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-xs);
+  line-height: 1.6;
+}
+
+/* Buttons */
+
+/* Form */
+.form         { display: flex; flex-direction: column; gap: var(--space-3); width: 100%; max-width: 400px; }
+.label        { font-size: var(--t-xl); font-weight: 500; color: var(--text); margin-bottom: var(--space-1); display: block; }
+.hint         { font-size: var(--t-l); color: var(--text-subtle); }
+
+/* Badges */
+.badge          { display: inline-flex; align-items: center; padding: 0.25rem 0.65rem; border-radius: 20px; font-size: var(--t-m); font-weight: 600; min-height: 24px; }
+.badge-primary  { background: var(--primary-light); color: var(--primary); }
+.badge-success  { background: #dcfce7; color: #15803d; }
+.badge-danger   { background: #fee2e2; color: #dc2626; }
+.badge-neutral  { background: var(--bg-subtle); color: var(--text-muted); border: 1px solid var(--border); }
+.badge-warning  { background: #ffedd5; color: #c2410c; }
+
+/* Stats grid */
+.stats-grid   { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+
+
+/* XP circle */
+.xp-circle, .credits-pill, .level-pill {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 24px; padding: 0.25rem 0.65rem; flex-shrink: 0;
+  border-radius: 20px;
+  font-weight: 600; font-size: var(--t-m); white-space: nowrap;
+}
+.xp-circle    { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.credits-pill { background: transparent; color: #a07b1e; border: 1.5px solid #e0c068; }
+.credits-pill::before { content: '$'; margin-right: 4px; }
+.level-pill   { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+
+/* Le pillole "conferma" e "annulla", i pulsanti a pixel e le famiglie
+   `.btn`/`.tab-pill` avevano ognuno il proprio aspetto: adesso li veste
+   `styles/buttons.css`, che e' l'unico posto in cui un pulsante prende
+   forma. Qui restano solo i pochi che hanno una forma tutta loro. */
+
+/* Icon button: solo l'icona, senza cerchio */
+.icon-btn-plain {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; flex-shrink: 0; padding: 0;
+  border: none; background: none; cursor: pointer;
+  color: var(--primary);
+  -webkit-tap-highlight-color: transparent;
+}
+.icon-btn-plain:hover { opacity: 0.7; }
+.icon-btn-plain svg { width: 100%; height: 100%; }
+
+/* Tab pills */
+
+/* Info list (label/value) */
+.info-list    { display: flex; flex-direction: column; }
+.info-row     { display: flex; justify-content: space-between; gap: var(--space-4); padding: 0.7rem 0; border-bottom: 1px solid var(--border); }
+.info-row:last-child { border-bottom: none; }
+.info-row dt  { color: var(--text-muted); font-size: var(--t-xl); }
+.info-row dd  { color: var(--text); font-weight: 600; text-align: right; }
+
+/* Menu list */
+.menu-list    { list-style: none; }
+.menu-item    { border-bottom: 1px solid var(--border); }
+.menu-link    { display: flex; align-items: center; padding: 0.9rem 0; color: var(--text); font-size: var(--t-2xl); text-decoration: none; min-height: 52px; }
+.menu-link:hover { color: var(--primary); text-decoration: none; }
+
+/* XP bar */
+.xp-bar  { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.xp-fill { height: 100%; background: var(--primary); border-radius: 4px; }
+
+/* Schermata di autenticazione in stile pixel */
+.auth-screen input { font-family: 'Press Start 2P', monospace; font-size: var(--t-s); line-height: 1.6; }
+.auth-screen summary { font-family: 'Press Start 2P', monospace; font-size: var(--t-xs); }
+.auth-screen .auth-toggle, .auth-screen .auth-toggle button { font-family: 'Press Start 2P', monospace; font-size: var(--t-xs); line-height: 1.7; }
+.pixel-bg .auth-tagline { font-family: 'Press Start 2P', monospace; font-size: var(--t-xs); font-style: normal; color: var(--px-muted); }
+
+/* Opzioni impostazioni in stile pixel */
+.px-settings label,
+.px-settings a,
+.px-settings button,
+.px-settings span:not(.badge) {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-s);
+  line-height: 1.6;
+}
+
+/* Descrizione pagina (sotto il titolo) in stile pixel */
+.pixel-bg .page-desc { font-family: 'Press Start 2P', monospace; font-size: var(--t-xs); line-height: 1.8; }
+
+/* Voci menu in stile pixel */
+.pixel-bg .menu-link,
+.pixel-bg .menu-item button {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-s);
+  line-height: 1.6;
+}
+
+/* Tab-pills e label info-row in stile pixel */
+.pixel-bg .tab-pill { font-family: 'Press Start 2P', monospace; font-size: var(--t-xs); }
+.pixel-bg .info-row dt { font-family: 'Press Start 2P', monospace; font-size: var(--t-xs); }
+
+/* Input chatbot in stile pixel (font Press Start 2P) */
+.px-chat input {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-xs);
+  line-height: 1.7;
+}
+.px-chat input::placeholder {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-xs);
+  color: var(--px-muted);
+}
+
+/* Icona calendario (date/datetime input) bianca */
+.px-date::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(2);
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  transform: scale(1.2);
+}
+
+/* Filtri in stile pixel (font Press Start 2P) */
+.px-filters input,
+.px-filters select {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-s);
+  line-height: 1.6;
+}
+.px-filters .label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-xs);
+}
+
+/* Righe lista (card-row) in stile pixel */
+.pixel-bg .card-row {
+  background: linear-gradient(180deg, var(--px-panel) 0%, var(--px-panel-2) 100%);
+  border: 3px solid var(--px-edge);
+  border-radius: 0;
+  box-shadow: 0 4px 0 var(--px-edge);
+  color: var(--px-text);
+}
+.pixel-bg .card-row:hover { background: var(--px-accent-d); }
+.pixel-bg .card-row .px-name { font-family: 'Press Start 2P', monospace; font-size: var(--t-s); line-height: 1.4; }
+
+/* Griglia Management: quadrati con icona + nome */
+.mgmt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.mgmt-tile {
+  aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: linear-gradient(180deg, var(--px-panel) 0%, var(--px-panel-2) 100%);
+  border: 3px solid var(--px-edge);
+  box-shadow: 0 4px 0 var(--px-edge);
+  color: var(--px-text);
+  text-decoration: none;
+  text-align: center;
+}
+.mgmt-tile:hover { background: var(--px-accent-d); text-decoration: none; }
+.mgmt-tile:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--px-edge); }
+.mgmt-icon { width: 72px; height: 72px; color: var(--px-text); }
+.mgmt-icon svg { width: 100%; height: 100%; display: block; }
+.mgmt-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-s);
+  line-height: 1.4;
+  color: var(--px-text);
+}
+
+/* Top-bar pixel (admin) */
+.px-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(var(--space-4) + env(safe-area-inset-top, 0px)) var(--space-6) var(--space-4);
+  border-bottom: 3px solid var(--px-edge);
+  background: linear-gradient(180deg, var(--px-panel) 0%, var(--px-panel-2) 100%);
+}
+.px-topbar .px-brand { font-family: 'Press Start 2P', monospace; font-size: var(--t-m); color: var(--px-text); }
+.px-topbar nav { display: flex; gap: var(--space-4); align-items: center; }
+.px-topbar a { color: var(--px-text); text-decoration: none; font-size: var(--t-xl); }
+.px-topbar a:hover { color: #fff; }
+
+/* Sfondo pixel-art riutilizzabile (es. tutte le pagine employee) */
+.pixel-bg {
+  background: radial-gradient(120% 80% at 50% 0%, var(--px-bg-1) 0%, var(--px-bg-2) 100%);
+  color: var(--px-text);
+
+  /* Rimappa le variabili semantiche al tema scuro: così i testi/forme/popup
+     che usano var(--text*), var(--bg*), var(--border*) diventano leggibili
+     senza modificare le singole pagine. */
+  --text:          var(--px-text);
+  --text-muted:    var(--px-muted);
+  --text-subtle:   var(--px-muted);
+  --bg:            var(--px-panel-2);
+  --bg-subtle:     var(--px-panel);
+  --border:        var(--px-edge);
+  --border-strong: var(--px-edge);
+}
+
+/* Titoli e card in stile pixel dentro le pagine con sfondo pixel */
+.pixel-bg h1, .pixel-bg h2, .pixel-bg h3, .pixel-bg h4 {
+  font-family: 'Press Start 2P', monospace;
+  line-height: 1.45;
+  letter-spacing: 0.5px;
+  color: var(--px-text);
+}
+.pixel-bg h3 { font-size: var(--t-l); }
+.pixel-bg h4 { font-size: var(--t-m); }
+.pixel-bg .section > p,
+.pixel-bg .card p { color: var(--px-muted); }
+
+.pixel-bg .card {
+  background: linear-gradient(180deg, var(--px-panel) 0%, var(--px-panel-2) 100%);
+  border: 3px solid var(--px-edge);
+  border-radius: 0;
+  box-shadow: 0 4px 0 var(--px-edge);
+  color: var(--px-text);
+}
+
+/* Badge: contorno colorato, sfondo trasparente, font pixel */
+.pixel-bg .badge {
+  border-radius: 999px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: var(--t-xs);
+  font-weight: 400;
+  padding: 0.35rem 0.6rem;
+  background: transparent;
+}
+.pixel-bg .badge-success { color: var(--px-green); border: 2px solid var(--px-green); }
+.pixel-bg .badge-warning { color: #fbbf24;        border: 2px solid #fbbf24; }
+.pixel-bg .badge-danger  { color: #f87171;        border: 2px solid #f87171; }
+.pixel-bg .badge-primary { color: #c0b6ff;        border: 2px solid var(--px-accent); }
+.pixel-bg .badge-neutral { color: var(--px-muted); border: 2px solid var(--px-muted); }
+
+/* Le pillole XP / crediti / livello sono valori: cornice, carattere e
+   colore glieli da' `terminal.css`. Qui resta solo l'altezza minima, che e'
+   il bersaglio da toccare col dito. */
+.pixel-bg .xp-circle, .pixel-bg .credits-pill, .pixel-bg .level-pill { min-height: 28px; }
+
+/* ─── Pixel-art profile ──────────────────────────────────────
+   Estetica retro/fantasy ispirata al mockup. Tutto è scoped sotto
+   .pixel-profile così non interferisce col resto dell'app. */
+.pixel-profile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  color: var(--px-text);
+  background:
+    radial-gradient(120% 80% at 50% 0%, var(--px-bg-1) 0%, var(--px-bg-2) 100%);
+  font-family: var(--font);
+  image-rendering: pixelated;
+}
+.pixel-profile h1,
+.pixel-profile h2,
+.pixel-profile .px-font {
+  font-family: 'Press Start 2P', monospace;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+}
+
+/* Pannello squadrato con bordo netto e ombra a gradino */
+.px-panel {
+  position: relative;
+  background: linear-gradient(180deg, var(--px-panel) 0%, var(--px-panel-2) 100%);
+  border: 3px solid var(--px-edge);
+  box-shadow: 0 6px 0 var(--px-edge), inset 0 0 0 2px rgba(139, 92, 246, 0.25);
+  padding: var(--space-5);
+}
+
+.px-title {
+  font-size: var(--t-2xl);
+  text-align: center;
+  color: var(--px-text);
+  text-shadow: 2px 2px 0 var(--px-edge);
+  margin: 0;
+}
+
+/* Icone-bottone (edit / messaggi) */
+.px-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--px-text);
+  background: var(--px-panel-2);
+  border: 2px solid var(--px-edge);
+  box-shadow: 0 3px 0 var(--px-edge);
+  padding: 8px;
+  cursor: pointer;
+  text-decoration: none;
+}
+.px-icon:hover { background: var(--px-accent-d); }
+.px-icon:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--px-edge); }
+.px-icon svg { flex-shrink: 0; display: block; }
+
+/* Variante senza contorno (icone sovrapposte / minimali) */
+.px-icon.bare { background: transparent; border: none; box-shadow: none; padding: 0; }
+.px-icon.bare:hover { background: transparent; color: var(--px-accent); }
+.px-icon.bare:active { transform: none; box-shadow: none; }
+
+/* Riquadro avatar */
+.px-frame {
+  width: 128px;
+  height: 128px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--px-panel);
+  border: 3px solid var(--px-edge);
+  box-shadow: inset 0 0 0 2px rgba(139, 92, 246, 0.3);
+}
+.px-avatar {
+  width: 104px;
+  height: 104px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+
+.px-action:hover { background: var(--px-accent); color: #fff; }
+.px-action:active { transform: translateY(2px); }
+.px-action.secondary {
+  border-color: var(--px-muted);
+  background: transparent;
+  color: var(--px-text);
+}
+.px-action.secondary:hover { background: rgba(169, 159, 214, 0.18); color: var(--px-text); }
+
+/* Checkbox in stile pixel UI */
+.px-check {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-family: 'Press Start 2P', monospace; font-size: var(--t-s); line-height: 1.6;
+  color: var(--px-text); cursor: pointer;
+}
+.px-check input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; margin: 0; flex-shrink: 0;
+  background: var(--px-panel-2);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 0 var(--px-edge);
+  border-radius: 0; cursor: pointer; position: relative;
+}
+.px-check input[type="checkbox"]:checked { background: var(--px-accent); }
+.px-check input[type="checkbox"]:checked::after {
+  content: ''; position: absolute; left: 5px; top: 1px;
+  width: 4px; height: 9px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Pulsante cestino (pixel art) per eliminare: bordo rosso, interno trasparente */
+
+
+
+.px-badge {
+  position: absolute;
+  top: -6px; right: -6px;
+  min-width: 18px; height: 18px;
+  padding: 0 5px;
+  background: var(--danger);
+  color: #fff;
+  border: 2px solid var(--bg);
+  border-radius: 999px;
+  font-size: var(--t-s);
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+
+/* ─── Navbar pixel-art (quadrati con icona + descrizione) ─────
+   Fissa e in sovrapposizione a qualsiasi pagina, dentro il frame. */
+.px-nav {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  z-index: 50;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, var(--px-panel) 0%, var(--px-panel-2) 100%);
+  border-top: 3px solid var(--px-edge);
+  box-shadow: 0 -4px 0 var(--px-edge);
+}
+.px-nav-item {
+  flex: 1;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 2px;
+  background: var(--px-panel-2);
+  border: 2px solid var(--px-edge);
+  box-shadow: 0 3px 0 var(--px-edge);
+  color: var(--px-muted);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  image-rendering: pixelated;
+}
+.px-nav-item:hover { color: var(--px-text); text-decoration: none; }
+.px-nav-item .px-nav-icon { width: 40px; height: 40px; flex-shrink: 0; }
+.px-nav-item .px-nav-label {
+  font-size: var(--t-s);
+  line-height: 1.15;
+  text-align: center;
+  word-break: break-word;
+}
+.px-nav-item.active {
+  background: var(--px-accent);
+  color: #fff;
+  box-shadow: 0 3px 0 var(--px-accent-d);
+}
+.px-nav-item:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--px-edge); }

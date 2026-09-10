@@ -1,0 +1,485 @@
+/**
+ * The Climb: solo quello che gli altri tre giochi non hanno gia'.
+ *
+ * Pannelli, pulsanti, barre, righe di dati e tacche a squadra sono quelli
+ * di Achivia e non si ridefiniscono. Qui dentro c'e' la disposizione del
+ * piano — una riga per attivita', col piu' e il meno — le schede che si
+ * premono per scegliere una vita, una strada o un lavoro, e il foglio del
+ * riepilogo che compare sopra la pagina.
+ *
+ * Le tre schede che si premono (`tc-vita`, `tc-strada`, `tc-lavoro`)
+ * stanno negli elenchi delle tacche in `terminal.css`, taglia piccola:
+ * sono comandi, e nascono con gli angoli del terminale.
+ */
+
+.tc-atrio, .tc-partita {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.tc-partita { padding: 0 14px 16px; position: relative; }
+
+.tc-riga-testo { margin: 0 0 var(--space-3); line-height: 1.55; }
+.tc-riga-testo:last-child { margin-bottom: 0; }
+
+.tc-azioni { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-3); }
+.tc-uscita { justify-content: center; }
+.tc-conferma { margin-top: var(--space-2); }
+.tc-nota { margin: var(--space-2) 0 0; }
+.tc-avviso { color: var(--tv-errore, #ff7a5c); }
+
+/* ═══ Il cruscotto ═══ */
+.tc-cruscotto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 10px 12px;
+}
+.tc-cruscotto:hover, .tc-cruscotto:focus-visible { border-color: var(--btn-cornice); box-shadow: none; }
+.tc-cruscotto:active { transform: none; border-color: var(--btn-cornice); }
+.tc-barre { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2) var(--space-3); }
+@media (max-width: 620px) { .tc-barre { grid-template-columns: 1fr; } }
+.tc-numeri { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); }
+.tc-voce { display: flex; flex-direction: column; line-height: 1.15; }
+.tc-voce small { opacity: 0.7; font-size: 0.72em; letter-spacing: 0.06em; }
+.tc-voce b { font-variant-numeric: tabular-nums; }
+.tc-voce i { font-style: normal; opacity: 0.6; }
+.tc-voce.is-allarme b { color: var(--tv-errore, #ff7a5c); }
+
+/* ═══ Il piano ═══
+   Una riga per attivita'. Il nome e la spiegazione a sinistra, il
+   contatore a destra: sul telefono la spiegazione va sotto il nome e il
+   contatore resta sulla riga del nome, cosi' il pollice trova sempre il
+   piu' e il meno nello stesso posto. */
+.tc-piano { display: flex; flex-direction: column; gap: var(--space-2); }
+.tc-righe { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tc-riga {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+.tc-riga.is-attiva { border-color: var(--tv-border-forte); }
+.tc-riga.is-chiusa { opacity: 0.5; }
+.tc-riga-nome { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tc-riga-nome b { color: var(--tv-bright); line-height: 1.2; }
+.tc-riga-nome b i { font-style: normal; font-weight: 400; opacity: 0.7; }
+.tc-riga-nome small { font-size: 0.66rem; color: var(--tv-dim); line-height: 1.35; }
+.tc-riga-passo { display: flex; align-items: center; gap: 4px; flex: none; }
+.tc-riga-passo .ui-btn { min-width: 34px; }
+.tc-riga-valore { min-width: 2.2em; text-align: center; font-variant-numeric: tabular-nums; color: var(--tv-bright); }
+
+/* ═══ Le schede che si premono: una vita, una strada, un lavoro ═══ */
+.tc-vite, .tc-strade, .tc-lavori {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-2);
+}
+.tc-vita, .tc-strada, .tc-lavoro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  text-align: left;
+  background: var(--btn-fondo);
+  border: var(--btn-bordo) solid var(--btn-cornice);
+  border-radius: var(--btn-raggio);
+  color: var(--tv-primary);
+  font-family: var(--tv-font);
+  cursor: pointer;
+  transition: var(--btn-transizione);
+}
+.tc-vita:hover, .tc-strada:hover, .tc-lavoro:hover,
+.tc-vita:focus-visible, .tc-strada:focus-visible, .tc-lavoro:focus-visible {
+  border-color: var(--tv-border-forte);
+  background: var(--btn-fondo-su);
+}
+.tc-vita:focus-visible, .tc-strada:focus-visible, .tc-lavoro:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.tc-vita.is-scelta, .tc-strada.is-scelta { border-color: var(--tv-primary); box-shadow: 0 0 12px var(--tv-glow); }
+.tc-vita b, .tc-strada b, .tc-lavoro b { font-size: 0.86rem; color: var(--tv-bright); }
+.tc-vita small { font-size: 0.66rem; color: var(--tv-dim); letter-spacing: 0.06em; text-transform: uppercase; }
+.tc-vita span, .tc-strada span, .tc-lavoro span { font-size: 0.74rem; line-height: 1.45; }
+
+/* Il passo che si apre dopo la scelta: staccato da sopra, cosi' si vede
+   che e' una conseguenza. */
+.tc-passo { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--tv-border); }
+
+.tc-competenze { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2) var(--space-4); }
+@media (max-width: 620px) { .tc-competenze { grid-template-columns: 1fr; } }
+
+.tc-elenco { margin: 0; padding-left: 1.1em; }
+.tc-elenco li { margin-bottom: 6px; line-height: 1.5; }
+.tc-finite li b { color: var(--tv-bright); }
+
+/* ═══ Il riepilogo: sopra la pagina, senza uscirne ═══
+   Fisso sullo schermo, con il tetto d'altezza del telefono: quello che
+   non ci sta scorre dentro il foglio, con la barra sottile sempre
+   disegnata — come il report di The Boss, e per la stessa ragione: una
+   parte nascosta che nessuno sa di poter andare a prendere e' persa. */
+.tc-riepilogo {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding:
+    max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(4, 7, 11, 0.78);
+  animation: tc-appare 160ms ease-out;
+}
+@keyframes tc-appare { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tc-riepilogo { animation: none; } }
+.tc-foglio {
+  width: min(560px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tc-scorre {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--tv-border-forte) transparent;
+}
+.tc-scorre::-webkit-scrollbar { width: 6px; }
+.tc-scorre::-webkit-scrollbar-thumb { background: var(--tv-border-forte); }
+
+/* ═══ La carriera: le carte, la scheda, le porte, le offerte ═══
+   Le carte sono la schermata «Perche'» del gioco: una riga per voce, il
+   valore contro la richiesta, il segno. Non si premono: niente tacche. */
+.tc-carte { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tc-carta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 8px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  font-size: 0.8rem;
+}
+.tc-carta.is-ok { border-color: var(--tv-border-forte); }
+.tc-carta.is-no { border-color: var(--tv-errore, #ff7a5c); }
+.tc-carta-nome { min-width: 0; }
+.tc-carta-nome small { display: block; font-size: 0.66rem; color: var(--tv-dim); }
+.tc-carta-valore { flex: none; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tc-carta-valore b { color: var(--tv-bright); }
+.tc-carta-valore i { font-style: normal; opacity: 0.6; }
+.tc-carta-segno { margin-left: 8px; }
+.tc-carta.is-ok .tc-carta-segno { color: var(--tv-primary); }
+.tc-carta.is-no .tc-carta-segno { color: var(--tv-errore, #ff7a5c); }
+
+.tc-lezione {
+  margin: var(--space-3) 0 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--tv-primary);
+  line-height: 1.55;
+  font-style: italic;
+}
+
+.tc-scheda { margin-top: var(--space-2); }
+.tc-attributi {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px 14px;
+}
+.tc-scheda.is-compatta .tc-attributi { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+.tc-attributo { display: flex; flex-direction: column; }
+.tc-attributo dt { font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+.tc-attributo dd { margin: 0; font-variant-numeric: tabular-nums; }
+.tc-attributo dd b { color: var(--tv-bright); }
+.tc-attributo dd i { font-style: normal; opacity: 0.6; }
+.tc-diceva { display: block; font-size: 0.66rem; color: var(--tv-errore, #ff7a5c); }
+
+.tc-porte { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tc-porta {
+  padding: 8px 10px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+.tc-porta.is-chiusa { opacity: 0.6; }
+.tc-porta-testa { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tc-porta-nome { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tc-porta-nome b { color: var(--tv-bright); }
+.tc-porta-nome small { font-size: 0.66rem; color: var(--tv-dim); }
+.tc-porta-chiusa { font-size: 0.66rem; color: var(--tv-dim); max-width: 220px; text-align: right; }
+
+.tc-offerta + .tc-offerta { margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--tv-border); }
+
+/* ═══ Le persone ═══ */
+.tc-persone { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tc-persona {
+  padding: 8px 10px;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: var(--tv-surface);
+}
+.tc-persona.is-sponsor { border-color: var(--tv-primary); }
+.tc-persona.is-andata { opacity: 0.55; }
+.tc-persona-testa { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tc-persona-nome { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tc-persona-nome b { color: var(--tv-bright); }
+.tc-persona-nome small { font-size: 0.66rem; color: var(--tv-dim); }
+.tc-persona-fiducia { flex: 1 1 180px; max-width: 260px; }
+.tc-persona-spiega { margin: 6px 0 0; font-size: 0.74rem; line-height: 1.45; color: var(--tv-dim); }
+.tc-persona-memoria { margin-top: 4px; }
+.tc-persona-mosse { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 8px; }
+.tc-mossa { display: flex; flex-direction: column; gap: 2px; }
+.tc-mossa-perche { font-size: 0.62rem; color: var(--tv-dim); max-width: 180px; }
+
+/* ═══ Gli eventi ═══ */
+.tc-opzioni { display: flex; flex-direction: column; gap: 8px; margin-top: var(--space-3); }
+.tc-opzione { display: flex; flex-direction: column; gap: 2px; }
+.tc-opzione .ui-btn { white-space: normal; text-align: left; }
+.tc-tag { opacity: 0.65; font-size: 0.66rem; letter-spacing: 0.04em; }
+
+/* ═══ E se fossi nato altrove? ═══ */
+.tc-altrove { display: block; font-size: 0.7rem; color: var(--tv-dim); margin-top: 2px; }
+.tc-altrove-elenco li.is-mia { color: var(--tv-bright); }
+.tc-altrove-conta { display: block; font-size: 0.66rem; color: var(--tv-dim); }
+
+/* ═══ La stanza, alla Tabboz ═══
+   Una schermata sola: la stanza con l'avatar in mezzo, i contatori a
+   lato, la fila dei tasti sotto. Dentro la stanza tre fasce che non si
+   toccano mai: in alto il cielo e il fumetto (fino al 36%), in mezzo
+   l'avatar (dal 40% in giu', largo un terzo), negli angoli in basso la
+   scritta a sinistra e la targa con il diploma a destra — ognuno dentro
+   il suo 28%, e l'avatar non arriva mai al 34% da un lato o dall'altro. Ogni tasto apre una finestra sopra la
+   stanza (`Finestra`), come i posti di Tabboz; il piano della settimana
+   e' la prima. Sul telefono la stanza sta sopra e i contatori sotto;
+   dal tablet in su stanno affiancati e le barre vanno in colonna. */
+.tc-tabboz { gap: var(--space-2); }
+/* La testata e' una striscia di vetro come il resto, non una riga di
+   testo appoggiata sul fondo: cornice, tacche, e le parole di servizio
+   nel colore primario invece che in quello smorzato, che sul telefono
+   non si leggeva. */
+.tc-testata {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 14px;
+  padding: 8px 12px;
+  background: var(--tv-vetro);
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  font-family: var(--tv-font); font-size: 0.9rem; line-height: 1.3;
+}
+.tc-testata > span { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 0 5px; }
+.tc-testata b { color: var(--tv-bright); font-size: 1rem; }
+.tc-testata small { color: var(--tv-primary); font-size: 0.78rem; letter-spacing: 0.03em; }
+.tc-testata .ui-btn { margin-left: auto; }
+.tc-schermo { display: grid; grid-template-columns: 1fr; gap: var(--space-2); }
+@media (min-width: 760px) {
+  .tc-schermo { grid-template-columns: minmax(0, 3fr) minmax(250px, 2fr); align-items: start; }
+  .tc-tabboz .tc-barre { grid-template-columns: 1fr; }
+}
+
+.tc-stanza {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--tv-border);
+  border-radius: var(--tv-radius);
+  background: #0d2033;
+  font-family: var(--tv-font);
+}
+.tc-muro {
+  position: absolute; inset: 0 0 30% 0;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(255, 255, 255, 0.025) 22px 24px),
+    linear-gradient(180deg, #16344e, #0e2437 85%);
+}
+.tc-pavimento {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 30%;
+  border-top: 2px solid #26394a;
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.28) 0 2px, transparent 2px 44px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 35%),
+    #172129;
+}
+
+/* La finestra sul muro: il cielo cambia con la stagione, e il mese sta scritto sotto. */
+.tc-cielo {
+  position: absolute; top: 7%; left: 5%; width: 19%; aspect-ratio: 4 / 5;
+  border: 3px solid #2b3f4d;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 18px rgba(74, 217, 255, 0.12);
+  background: linear-gradient(180deg, #7fb4d8, #d9ecf7);
+}
+.tc-cielo::before, .tc-cielo::after { content: ''; position: absolute; background: #2b3f4d; }
+.tc-cielo::before { left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; }
+.tc-cielo::after { top: 50%; left: 0; right: 0; height: 2px; margin-top: -1px; }
+.tc-cielo-sole { position: absolute; width: 22%; aspect-ratio: 1; border-radius: 50%; background: #ffe08a; box-shadow: 0 0 10px #ffe08a; top: 18%; right: 16%; }
+.tc-cielo small { position: absolute; left: 0; right: 0; bottom: -1.6em; text-align: center; font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tv-dim); }
+.is-inverno .tc-cielo { background: linear-gradient(180deg, #8ea3b3, #dfe6ea); }
+.is-inverno .tc-cielo-sole { background: #f4f1e6; box-shadow: none; top: 12%; right: 20%; width: 16%; }
+.is-primavera .tc-cielo { background: linear-gradient(180deg, #6fb0e0, #cfe8d8); }
+.is-estate .tc-cielo { background: linear-gradient(180deg, #2f8fd8, #ffd9a0); }
+.is-estate .tc-cielo-sole { width: 28%; box-shadow: 0 0 16px #ffd76a; }
+.is-autunno .tc-cielo { background: linear-gradient(180deg, #a0876f, #e9c9a0); }
+.is-autunno .tc-cielo-sole { background: #ffb15c; box-shadow: 0 0 8px #ffb15c; top: 30%; }
+
+/* La targa del posto e il titolo di studio: etichette, non superfici — niente tacche. */
+.tc-targa {
+  position: absolute; bottom: 5%; right: 4%; width: 28%;
+  display: flex; flex-direction: column; gap: 1px; padding: 5px 6px;
+  border: 2px solid #3a5266; background: #0a1a26; color: var(--tv-bright);
+  text-align: center; font-size: 0.7rem; line-height: 1.2;
+}
+.tc-targa small { font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tv-dim); }
+.tc-diploma {
+  position: absolute; bottom: 26%; right: 4%; width: 28%;
+  display: flex; flex-direction: column; gap: 1px; padding: 4px 6px;
+  border: 2px solid #6b5a2f; background: #1b1a12; color: #e2cf8f;
+  text-align: center; font-size: 0.6rem; line-height: 1.25;
+}
+.tc-diploma small { letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+
+/* Il fumetto: quello che dice, o l'ultima cosa successa. Sta sopra la
+   testa, a sinistra del centro, con la coda verso l'avatar. */
+.tc-fumetto {
+  position: absolute; top: 5%; left: 27%; right: 4%; max-height: 31%;
+  margin: 0; padding: 8px 10px;
+  background: var(--tv-vetro); color: var(--tv-bright);
+  font-size: 0.76rem; line-height: 1.45;
+}
+.tc-fumetto:hover, .tc-fumetto:focus-visible { border-color: var(--btn-cornice); }
+.tc-fumetto-coda {
+  position: absolute; left: 30%; bottom: -10px; width: 0; height: 0;
+  border-left: 8px solid transparent; border-right: 8px solid transparent; border-top: 10px solid var(--tv-border-forte);
+}
+
+/* L'avatar del profilo: pixel ingranditi senza sfumare, in piedi sul pavimento. */
+.tc-figura {
+  position: absolute; left: 50%; bottom: 6%; height: 54%; margin: 0;
+  transform: translateX(-50%);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.tc-avatar {
+  height: 100%; width: auto; max-width: none;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  filter: drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35));
+  transform-origin: 50% 100%;
+  user-select: none;
+}
+.tc-avatar.is-stress { animation: tc-tremito 0.6s steps(2) infinite; }
+.tc-avatar.is-crollo { animation: tc-tremito 0.28s steps(2) infinite; filter: grayscale(0.35) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); }
+.tc-avatar.is-stanco { animation: tc-ciondola 3.2s ease-in-out infinite; }
+.tc-avatar.is-noia { filter: saturate(0.5) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); }
+.tc-avatar.is-malato { filter: grayscale(0.7) brightness(0.8) drop-shadow(0 6px 0 rgba(0, 0, 0, 0.35)); }
+.tc-avatar.is-felice { animation: tc-salta 1.6s ease-in-out infinite; }
+@keyframes tc-tremito { from { transform: translateX(-1.5px); } to { transform: translateX(1.5px); } }
+@keyframes tc-ciondola { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+@keyframes tc-salta { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .tc-avatar { animation: none !important; } }
+/* l'umore sta accanto alla mano sinistra, non sopra la testa: sopra la
+   testa c'e' il fumetto, e un segno che lo copre non si legge */
+.tc-umore {
+  position: absolute; bottom: 42%; left: -20%; transform: translateX(-50%);
+  padding: 2px 7px; border-radius: 999px;
+  background: var(--tv-warn); color: var(--tv-bg);
+  font-size: 0.72rem; font-weight: 700; line-height: 1.3;
+}
+.tc-scritta { position: absolute; left: 4%; bottom: 5%; max-width: 28%; display: flex; flex-direction: column; font-size: 0.66rem; line-height: 1.3; }
+.tc-scritta small { color: var(--tv-dim); }
+.tc-scritta b { color: var(--tv-bright); }
+
+/* I tasti: i posti in cui si va. Una griglia che si piega da sola. */
+.tc-tasti { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.tc-tasti .ui-btn { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+.tc-conta { flex: none; padding: 0 6px; border-radius: 999px; background: var(--tv-primary); color: var(--tv-bg); font-size: 0.64rem; font-weight: 700; }
+.tc-comandi { justify-content: center; }
+
+/* La finestra sopra la stanza. */
+.tc-sopra { align-items: flex-start; background: rgba(4, 7, 11, 0.62); }
+.tc-finestra {
+  width: min(640px, 100%); max-height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--tv-bg);
+  border: 1px solid var(--tv-border-forte);
+  border-radius: var(--tv-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: tc-appare 160ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) { .tc-finestra { animation: none; } }
+.tc-finestra-testa {
+  display: flex; align-items: center; gap: 8px; min-height: 42px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--tv-border);
+  background: var(--tv-surface-2);
+}
+.tc-finestra-righe { flex: 1; height: 10px; min-width: 16px; background: repeating-linear-gradient(180deg, var(--tv-border-forte) 0 1px, transparent 1px 3px); order: 2; }
+.tc-finestra-titolo { order: 1; color: var(--tv-bright); text-transform: uppercase; letter-spacing: 0.06em; font-size: 0.78rem; white-space: nowrap; }
+.tc-finestra-meta { order: 3; color: var(--tv-dim); font-size: 0.64rem; }
+/* La crocetta e' disegnata, non scritta: il carattere «×» nel font
+   monospazio sta sotto la meta' del suo riquadro e non si centra mai
+   davvero. Due barre a quarantacinque gradi stanno in mezzo dappertutto.
+   Il testo resta per chi legge senza vedere. */
+.tc-finestra-chiudi {
+  order: 4; flex: none; width: 30px; height: 30px; padding: 0; margin: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: var(--btn-bordo) solid var(--btn-cornice); border-radius: var(--btn-raggio);
+  background: var(--btn-fondo); color: var(--tv-primary);
+  font-size: 0; line-height: 0; cursor: pointer;
+}
+.tc-finestra-chiudi::after {
+  content: ''; width: 12px; height: 12px;
+  background:
+    linear-gradient(45deg, transparent 44%, currentColor 44% 56%, transparent 56%),
+    linear-gradient(-45deg, transparent 44%, currentColor 44% 56%, transparent 56%);
+}
+.tc-finestra-chiudi:hover, .tc-finestra-chiudi:focus-visible { border-color: var(--tv-border-forte); background: var(--btn-fondo-su); }
+.tc-finestra-chiudi:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+.tc-finestra-corpo { padding: var(--tv-pad); min-height: 0; }
+.tc-finestra-piede { padding: 8px var(--tv-pad) 12px; margin-top: 0; border-top: 1px solid var(--tv-border); }
+
+/* ═══ La guida: un pezzo alla volta ═══
+   Il velo copre tutto; il pezzo di cui si parla porta `tc-in-luce` e sale
+   sopra il velo, acceso. La scheda sta in basso, o in alto se il pezzo
+   acceso sta nella meta' bassa dello schermo. */
+.tc-guida-velo { position: fixed; inset: 0; z-index: 5; background: rgba(4, 7, 11, 0.72); animation: tc-appare 160ms ease-out; }
+.tc-in-luce {
+  z-index: 6;
+  outline: 2px solid var(--tv-primary); outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(74, 217, 255, 0.18), 0 0 28px var(--tv-glow-forte);
+}
+/* i pezzi della stanza sono gia' posizionati: a loro basta salire; ai
+   pezzi in flusso serve un riferimento, se no lo z-index non conta */
+.tc-tasti.tc-in-luce, .tc-comandi.tc-in-luce, .tc-cruscotto.tc-in-luce { position: relative; }
+.tc-guida {
+  position: fixed; left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 7;
+  width: min(520px, calc(100% - 24px));
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 12px 14px;
+  background: var(--tv-bg);
+  border: 1px solid var(--tv-border-forte); border-radius: var(--tv-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  font-family: var(--tv-font);
+  animation: tc-appare 160ms ease-out;
+}
+.tc-guida.is-in-alto { bottom: auto; top: max(12px, env(safe-area-inset-top)); }
+@media (prefers-reduced-motion: reduce) { .tc-guida, .tc-guida-velo { animation: none; } }
+.tc-guida-conto { margin: 0; font-size: 0.6rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--tv-dim); }
+.tc-guida-titolo { margin: 0; font-size: 0.95rem; color: var(--tv-bright); }
+.tc-guida-testo { margin: 0; font-size: 0.8rem; line-height: 1.5; color: var(--tv-dim); }
+.tc-guida-azioni { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+
+/* ═══ Le frasi non si tagliano ═══
+   Le righe del terminale accorciano l'etichetta con i puntini perche'
+   quello che conta e' la cifra in fondo; qui invece l'etichetta e' spesso
+   una frase — «interessi sul debito», «competenza tecnica di settore» —
+   e la cifra e' corta. Nel gioco vanno a capo, tutte: etichette, valori,
+   il meta in testa al pannello, le carte del perche'. */
+.tc-partita .tv-row-label > span, .tc-riepilogo .tv-row-label > span { white-space: normal; overflow: visible; text-overflow: clip; }
+.tc-partita .tv-row-value, .tc-riepilogo .tv-row-value { white-space: normal; text-align: right; }
+.tc-partita .tv-testa, .tc-riepilogo .tv-testa { flex-wrap: wrap; row-gap: 2px; }
+.tc-partita .tv-meta, .tc-riepilogo .tv-meta { white-space: normal; text-align: right; }
+.tc-partita .tc-carta-valore, .tc-riepilogo .tc-carta-valore { white-space: normal; text-align: right; }
+.tc-riepilogo .tv-panel, .tc-finestra .tv-panel { min-width: 0; }
+.tc-foglio > * { flex: none; }
